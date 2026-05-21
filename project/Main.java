@@ -64,7 +64,7 @@ public class Main {
             screen.clear();
 
             // 배경 그리기
-            tg.drawImage(new TerminalPosition(0,0), assets.BACKGROUND);
+            tg.drawImage(new TerminalPosition(0,0), Assets.BACKGROUND);
 
             screen.refresh();
 

@@ -1,6 +1,6 @@
 import com.googlecode.lanterna.graphics.TextImage;
 
-public class assets {
+public class Assets {
     private static final String[] BACKGROUND_STRING = {
         "",
         " ********************************************************************************",
