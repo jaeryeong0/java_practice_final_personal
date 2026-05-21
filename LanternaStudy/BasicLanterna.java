@@ -1,51 +1,107 @@
+import com.googlecode.lanterna.TerminalPosition;
 import com.googlecode.lanterna.TerminalSize;
 import com.googlecode.lanterna.graphics.TextGraphics;
+import com.googlecode.lanterna.graphics.TextImage;
+import com.googlecode.lanterna.input.KeyStroke;
+import com.googlecode.lanterna.input.KeyType;
 import com.googlecode.lanterna.screen.Screen;
 import com.googlecode.lanterna.screen.TerminalScreen;
 import com.googlecode.lanterna.terminal.DefaultTerminalFactory;
 import com.googlecode.lanterna.terminal.Terminal;
+import com.googlecode.lanterna.terminal.swing.SwingTerminalFontConfiguration;
+import java.awt.Font;
+
+import java.io.IOException;
 
 
 public class BasicLanterna {
-    public static final int SCREEN_COL = 150;
-    public static final int SCREEN_ROW = 50;
 
+    // size of screen (number of characters)
+    public static final int SCREEN_COL = 160;
+    public static final int SCREEN_ROW = 60;
+    
     public static void main(String[] args) {
+        
+        boolean running = true;
+        Screen screen = null;
 
         try {
-            // 1. 터미널 설정 및 스크린 생성 (에뮬레이터 창 사용)
+            //----------------------------------------------------------------
+            // screen initialization
+            //----------------------------------------------------------------
+            
+            // 외부 애뮬레이터 창에서 프로그램 실행하도록 설정.
             DefaultTerminalFactory factory = new DefaultTerminalFactory();
             factory.setPreferTerminalEmulator(true);
             
+            // 폰트 지정
+            Font myFont = new Font("Consolas", Font.PLAIN, 16);
+            SwingTerminalFontConfiguration fontConfig = SwingTerminalFontConfiguration.newInstance(myFont);
+            factory.setTerminalEmulatorFontConfiguration(fontConfig);
+
+
+            // 화면 크기 세팅
             TerminalSize initialSize = new TerminalSize(SCREEN_COL, SCREEN_ROW);
             factory.setInitialTerminalSize(initialSize);
 
-            // 1. 스크린 대신 '터미널'을 먼저 생성합니다.
+            // 터미널 실행하고, 화면 크기 조절 불가하도록 설정
             Terminal terminal = factory.createTerminal();
-
-            // 2. 생성된 터미널이 윈도우 창(JFrame)인지 확인하고 크기 조절을 막습니다.
             if (terminal instanceof javax.swing.JFrame) {
                 ((javax.swing.JFrame) terminal).setResizable(false);
             }
 
-            // 3. 크기가 고정된 터미널을 가지고 스크린을 만듭니다.
-            Screen screen = new TerminalScreen(terminal);
+            // 스크린 실행
+            screen = new TerminalScreen(terminal);
             screen.startScreen();
+            
+            // 커서 숨기기
+            screen.setCursorPosition(null);
 
-            // 2. 화면에 그리기 위한 도구(TextGraphics) 가져오기
+            // 화면에 그리기 위한 도구 가져오기
             TextGraphics tg = screen.newTextGraphics();
-
-            // 3. 화면 깨끗하게 지우기
+            
+            // 화면 지우기
             screen.clear();
 
-            // 4. 원하는 위치(x: 10, y: 5)에 텍스트 그리기
-            tg.putString(10, 5, "Hello, Lanterna!");
-            
-            // 5. 그린 내용을 실제 화면에 적용 (매우 중요!)
+            // Main이나 다른 클래스에서 부를 때
+            tg.drawImage(new TerminalPosition(0,0), assets.BACKGROUND);
+
             screen.refresh();
+
+            //-----------------------------------------------------------------
+            while (running) {
+                KeyStroke key = screen.pollInput();
+
+                //-----------------------------------------------------------------
+                // 플레이어로부터 키 입력 처리
+                //-----------------------------------------------------------------
+                if (key != null) {
+                    // 창 닫는 버튼 눌렀을 때.
+                    if (key.getKeyType() == KeyType.EOF) {
+                        break;
+                    }
+
+
+
+                }
+                //-----------------------------------------------------------------
+                // 소켓 통신 결과 업데이트
+                //-----------------------------------------------------------------
+
+                // 딜레이 (약 30 tps로 설정)
+                Thread.sleep(33);
+            }
 
         } catch (Exception e) {
             e.printStackTrace();
+        } finally {
+            if (screen != null) {
+                try {
+                    screen.close();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
         }
     }
 }

@@ -1,0 +1,6 @@
+{
+    "java.project.referencedLibraries": [
+        "lib/**/*.jar",
+        "LanternaStudy/lib/lanterna-3.1.2.jar"
+    ]
+}
