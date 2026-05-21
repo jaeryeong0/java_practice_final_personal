@@ -14,7 +14,7 @@ import java.awt.Font;
 import java.io.IOException;
 
 
-public class BasicLanterna {
+public class Main {
 
     // size of screen (number of characters)
     public static final int SCREEN_COL = 160;
@@ -63,7 +63,7 @@ public class BasicLanterna {
             // 화면 지우기
             screen.clear();
 
-            // Main이나 다른 클래스에서 부를 때
+            // 배경 그리기
             tg.drawImage(new TerminalPosition(0,0), assets.BACKGROUND);
 
             screen.refresh();
