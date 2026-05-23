@@ -1,4 +1,3 @@
-import com.googlecode.lanterna.TerminalPosition;
 import com.googlecode.lanterna.TerminalSize;
 import com.googlecode.lanterna.graphics.BasicTextImage;
 import com.googlecode.lanterna.graphics.TextGraphics;
@@ -32,7 +31,7 @@ public class Util {
             tg.putString(0, y, asciiArt[y]);
         }
 
-        // 완성된 이미지 객체 반환
+        // return processed variable
         return image;
     }
 }

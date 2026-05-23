@@ -1,7 +1,6 @@
 import com.googlecode.lanterna.TerminalPosition;
 import com.googlecode.lanterna.TerminalSize;
 import com.googlecode.lanterna.graphics.TextGraphics;
-import com.googlecode.lanterna.graphics.TextImage;
 import com.googlecode.lanterna.input.KeyStroke;
 import com.googlecode.lanterna.input.KeyType;
 import com.googlecode.lanterna.screen.Screen;
@@ -81,13 +80,21 @@ public class Main {
                         break;
                     }
 
-
+                    // 키 입력 테스트
+                    if (key.getKeyType() == KeyType.ArrowDown) {
+                        tg.drawImage(new TerminalPosition(10, 2), Assets.BULLET);
+                        screen.refresh();
+                    }
 
                 }
+                
                 //-----------------------------------------------------------------
                 // 소켓 통신 결과 업데이트
                 //-----------------------------------------------------------------
 
+
+
+                //-----------------------------------------------------------------
                 // 딜레이 (약 30 tps로 설정)
                 Thread.sleep(33);
             }
