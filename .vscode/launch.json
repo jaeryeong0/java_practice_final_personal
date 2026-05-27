@@ -6,6 +6,13 @@
     "configurations": [
         {
             "type": "java",
+            "name": "LanternaColorExample",
+            "request": "launch",
+            "mainClass": "LanternaColorExample",
+            "projectName": "java_practice_final_personal_c890ed58"
+        },
+        {
+            "type": "java",
             "name": "Main",
             "request": "launch",
             "mainClass": "Main",

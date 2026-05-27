@@ -1,5 +1,6 @@
 import com.googlecode.lanterna.TerminalPosition;
 import com.googlecode.lanterna.TerminalSize;
+import com.googlecode.lanterna.TextColor;
 import com.googlecode.lanterna.graphics.TextGraphics;
 import com.googlecode.lanterna.input.KeyStroke;
 import com.googlecode.lanterna.input.KeyType;
@@ -16,8 +17,8 @@ import java.io.IOException;
 public class Main {
 
     // size of screen (number of characters)
-    public static final int SCREEN_COL = 160;
-    public static final int SCREEN_ROW = 60;
+    public static final int SCREEN_COL = 270;
+    public static final int SCREEN_ROW = 70;
     
     public static void main(String[] args) {
         
@@ -34,7 +35,7 @@ public class Main {
             factory.setPreferTerminalEmulator(true);
             
             // 폰트 지정
-            Font myFont = new Font("Consolas", Font.PLAIN, 16);
+            Font myFont = new Font("Consolas", Font.PLAIN, 12);
             SwingTerminalFontConfiguration fontConfig = SwingTerminalFontConfiguration.newInstance(myFont);
             factory.setTerminalEmulatorFontConfiguration(fontConfig);
 
@@ -63,7 +64,27 @@ public class Main {
             screen.clear();
 
             // 배경 그리기
-            tg.drawImage(new TerminalPosition(0,0), Assets.BACKGROUND);
+            tg.drawLine(97, 0, 97, 69, '*');
+
+            // 2. (97, 17) - (269, 17) : 가로선 (X 끝 좌표 270 -> 269)
+            tg.drawLine(97, 17, 269, 17, '*');
+
+            // 3. (97, 40) - (269, 40) : 가로선 (X 끝 좌표 270 -> 269)
+            tg.drawLine(97, 40, 269, 40, '*');
+
+            // 4. (204, 17) - (204, 40) : 세로선
+            tg.drawLine(204, 17, 204, 40, '*');
+
+
+            Util.placeImage(tg, UIPositions.MyBoard.BOARD, "board");
+            Util.placeImage(tg, UIPositions.MyBoard.BULLETS[0], "bullet", "yellow_bright");
+
+            Util.placeImage(tg, UIPositions.TargetBoard.BOARD, "board");
+            Util.placeImage(tg, UIPositions.TargetBoard.BULLETS[0], "bullet", "yellow_bright");
+
+            // Util.placeImage(tg, UIPositions.TargetBoard.BOARD, "board");
+            
+                       
 
             screen.refresh();
 
@@ -81,11 +102,33 @@ public class Main {
                     }
 
                     // 키 입력 테스트
-                    if (key.getKeyType() == KeyType.ArrowDown) {
-                        tg.drawImage(new TerminalPosition(10, 2), Assets.BULLET);
+                    // if (key.getKeyType() == KeyType.ArrowDown) {
+                    //     tg.drawImage(new TerminalPosition(3, 8), Assets.VICE);
+                    //     tg.drawImage(new TerminalPosition(6, 2), Util.colorizeTextImage(Assets.BULLET, TextColor.ANSI.YELLOW_BRIGHT));
+                    //     tg.drawImage(new TerminalPosition(100, 0), Util.colorizeTextImage(Assets.FRAME, TextColor.ANSI.RED));
+                    //     tg.drawImage(new TerminalPosition(103, 2), Assets.GUN1);
+                    //     Util.placeImage(tg, UIPositions.MyBoard.WEAPON_CARD, "GUN1", "WHITE");
+
+                    //     screen.refresh();
+                    // }
+                    else if (key.getKeyType() == KeyType.Character) {
+                        if (key.getCharacter() == '1') {
+                            Util.placeImage(tg, UIPositions.MyBoard.WEAPON_CARD, "GUN1");
+                        }
+                        else if (key.getCharacter() == '2') {
+                            Util.placeImage(tg, UIPositions.MyBoard.WEAPON_CARD, "GUN2");
+                        }
+                        else if (key.getCharacter() == '3') {
+                            Util.placeImage(tg, UIPositions.MyBoard.WEAPON_CARD, "GUN3");
+                        }
+                        else if (key.getCharacter() == '4') {
+                            Util.placeImage(tg, UIPositions.MyBoard.WEAPON_CARD, "GUN4");
+                        }
+                        else if (key.getCharacter() == '5') {
+                            Util.placeImage(tg, UIPositions.MyBoard.WEAPON_CARD, "GUN5");
+                        }
                         screen.refresh();
                     }
-
                 }
                 
                 //-----------------------------------------------------------------
@@ -112,3 +155,4 @@ public class Main {
         }
     }
 }
+
