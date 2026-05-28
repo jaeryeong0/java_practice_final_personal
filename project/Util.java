@@ -71,11 +71,11 @@ public class Util {
         return colorizeTextImage(originalImage, color);
     }
 
-
+    // colorName의 기본값을 white로 하기 위함.
     public static void placeImage(TextGraphics tg, TerminalPosition position, String assetName) {
         placeImage(tg, position, assetName, "white");
     }
-
+    // 이미지 그릴 때 이 함수로 깔끔하게 적으려고 만듦
     public static void placeImage(TextGraphics tg, TerminalPosition position, String assetName, String colorName) {
         try {
             Field field = Assets.class.getField(assetName.toUpperCase());
@@ -90,6 +90,40 @@ public class Util {
             return;
         } catch (Exception e) {
             return;
+        }
+    }
+
+    // 깔려 있는 카드, 내 손패를 배치하기 위한 함수
+    public static void placeCards(TextGraphics tg, TextImage[] cards, TerminalPosition startPos, int maxWidth) {
+        if (cards == null || cards.length == 0) {
+            return;
+        }
+
+        int numCards = cards.length;
+        int cardWidth = cards[0].getSize().getColumns();
+        
+        int spacing;
+
+        if (numCards == 1) {
+            spacing = 0;
+        } else {
+            int totalNormalWidth = numCards * cardWidth;
+
+            if (totalNormalWidth <= maxWidth) {
+                spacing = cardWidth;
+            } else {
+                spacing = (maxWidth - cardWidth) / (numCards - 1);
+                spacing = Math.max(1, spacing);
+            }
+        }
+
+        for (int i = numCards - 1; i >= 0; i--) {
+            int currentX = startPos.getColumn() + (i * spacing);
+            int currentY = startPos.getRow() - (i % 2);
+
+            TerminalPosition drawPos = new TerminalPosition(currentX, currentY);
+
+            tg.drawImage(drawPos, cards[i]);
         }
     }
 }

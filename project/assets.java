@@ -39,14 +39,29 @@ public class Assets {
         "     ▀█████",
         "       ▀▀▀ "
     };
-    // private static final String[] BULLET_STRING = {
-    //     " ▄▄▄ ",
-    //     "▄███▄",
-    //     "█████",
-    //     "█████",
-    //     "█████",
-    //     "█████"
-    // };
+
+    private static final String[] USER_ICON_STRING = {
+        "      ▄▄▄▄      ",
+        "    █▀    ▀█    ",
+        "   █        █   ",
+        "   █        █   ",
+        "    █▄    ▄█    ",
+        "      █  █      ",
+        "   ▄▀▀    ▀▀▄   ",
+        "  █          █  ",
+        "  █          █  ",
+        "  █          █  ",
+        "  █          █  ",
+        "  █▄▄▄▄▄▄▄▄▄▄█  "
+    };
+
+    private static final String[] NUMCARDS_DISPLAY_STRING = {
+        "█▀▀▀▀█",
+        "█ X3 █",
+        "█▄▄▄▄█"
+    }; // ▄▀█
+
+    
     //************************************************************
     // GUNS
     //************************************************************
@@ -222,7 +237,8 @@ public class Assets {
     //***********************************************
     public static final TextImage BOARD;
     public static final TextImage BULLET;
-    
+    public static final TextImage USER_ICON;
+    public static final TextImage NUMCARDS_DISPLAY;
     public static final TextImage GUN1;
     public static final TextImage GUN2;
     public static final TextImage GUN3;
@@ -238,6 +254,8 @@ public class Assets {
     static {
         BOARD = Util.createTextImage(BOARD_STRING);
         BULLET = Util.createTextImage(BULLET_STRING);
+        USER_ICON = Util.createTextImage(USER_ICON_STRING);
+        NUMCARDS_DISPLAY = Util.createTextImage(NUMCARDS_DISPLAY_STRING);
 
         GUN1 = Util.createTextImage(GUN1_STRING);
         GUN2 = Util.createTextImage(GUN2_STRING);

@@ -1,6 +1,7 @@
 import com.googlecode.lanterna.TerminalPosition;
 import com.googlecode.lanterna.TerminalSize;
 import com.googlecode.lanterna.TextColor;
+import com.googlecode.lanterna.graphics.TextImage;
 import com.googlecode.lanterna.graphics.TextGraphics;
 import com.googlecode.lanterna.input.KeyStroke;
 import com.googlecode.lanterna.input.KeyType;
@@ -64,25 +65,41 @@ public class Main {
             screen.clear();
 
             // 배경 그리기
-            tg.drawLine(97, 0, 97, 69, '*');
+            tg.drawLine(93, 0, 93, 69, '*');
 
             // 2. (97, 17) - (269, 17) : 가로선 (X 끝 좌표 270 -> 269)
-            tg.drawLine(97, 17, 269, 17, '*');
+            tg.drawLine(93, 16, 269, 16, '*');
 
             // 3. (97, 40) - (269, 40) : 가로선 (X 끝 좌표 270 -> 269)
-            tg.drawLine(97, 40, 269, 40, '*');
+            tg.drawLine(93, 38, 269, 38, '*');
 
             // 4. (204, 17) - (204, 40) : 세로선
-            tg.drawLine(204, 17, 204, 40, '*');
+            tg.drawLine(204, 17, 204, 38, '*');
 
 
             Util.placeImage(tg, UIPositions.MyBoard.BOARD, "board");
             Util.placeImage(tg, UIPositions.MyBoard.BULLETS[0], "bullet", "yellow_bright");
+            TextImage[] cards = {Assets.FRAME, Assets.FRAME, Assets.FRAME, Assets.FRAME};
+            Util.placeCards(tg, cards, UIPositions.MyBoard.PASSIVE_CARDS, 88);
+            Util.placeCards(tg, cards, UIPositions.MyBoard.HAND_CARDS, 88);
 
             Util.placeImage(tg, UIPositions.TargetBoard.BOARD, "board");
             Util.placeImage(tg, UIPositions.TargetBoard.BULLETS[0], "bullet", "yellow_bright");
+            Util.placeImage(tg, UIPositions.TargetBoard.HAND_COUNT, "numcards_display");
+            Util.placeCards(tg, cards, UIPositions.TargetBoard.PASSIVE_CARDS, 88);
+            
+            
+            String[] nicks = {"lkjo131", "asfwe123", "wefawef", "aa", "waefawgweag", "b", "dafawef"};
+            int numPlayers = nicks.length;
+            for (int i = 0; i < numPlayers; i++) {
+                Util.placeImage(tg, UIPositions.PlayerList.ICONS[i], "user_icon");
+                TerminalPosition pos = UIPositions.PlayerList.NICKNAMES[i];
+                tg.putString(pos.withColumn(pos.getColumn() - (nicks[i].length())/2), nicks[i]);
+            }
 
-            // Util.placeImage(tg, UIPositions.TargetBoard.BOARD, "board");
+            Util.placeImage(tg, UIPositions.TableCenter.MAIN_DECK, "frame", "yellow");
+            Util.placeImage(tg, UIPositions.TableCenter.DISCARD_PILE, "frame");
+
             
                        
 
