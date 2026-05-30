@@ -1,3 +1,4 @@
+package tools;
 import java.lang.reflect.Field;
 
 import com.googlecode.lanterna.TerminalPosition;
@@ -7,6 +8,7 @@ import com.googlecode.lanterna.TextColor;
 import com.googlecode.lanterna.graphics.BasicTextImage;
 import com.googlecode.lanterna.graphics.TextGraphics;
 import com.googlecode.lanterna.graphics.TextImage;
+
 
 public class Util {
     
@@ -60,48 +62,60 @@ public class Util {
     }
 
     // colorize by color name string (e.g. "RED", "GREEN", "BLUE")
-    public static TextImage colorizeTextImage(TextImage originalImage, String colorName) {
+    public static TextImage colorizeTextImage(TextImage asset, String colorName) {
         TextColor color = TextColor.ANSI.valueOf(colorName.toUpperCase());
-        return colorizeTextImage(originalImage, color);
+        return colorizeTextImage(asset, color);
     }
 
     // colorize by RGB values
-    public static TextImage colorizeTextImage(TextImage originalImage, int r, int g, int b) {
+    public static TextImage colorizeTextImage(TextImage asset, int r, int g, int b) {
         TextColor color = new TextColor.RGB(r, g, b);
-        return colorizeTextImage(originalImage, color);
+        return colorizeTextImage(asset, color);
     }
 
     // colorName의 기본값을 white로 하기 위함.
-    public static void placeImage(TextGraphics tg, TerminalPosition position, String assetName) {
-        placeImage(tg, position, assetName, "white");
+    public static void placeImage(TextGraphics tg, TerminalPosition position, TextImage asset) {
+        placeImage(tg, position, asset, "white");
     }
     // 이미지 그릴 때 이 함수로 깔끔하게 적으려고 만듦
-    public static void placeImage(TextGraphics tg, TerminalPosition position, String assetName, String colorName) {
+    public static void placeImage(TextGraphics tg, TerminalPosition position, TextImage asset, String colorName) {
         try {
-            Field field = Assets.class.getField(assetName.toUpperCase());
-            TextImage originalImage = (TextImage) field.get(null);
 
-            TextImage coloredImage = colorizeTextImage(originalImage, colorName);
+            TextImage coloredImage = colorizeTextImage(asset, colorName);
 
             tg.drawImage(position, coloredImage);
-        } catch (NoSuchFieldException e) {
-            return;
-        } catch (IllegalAccessException e) {
-            return;
         } catch (Exception e) {
             return;
         }
     }
 
+    public static void changeBackgroundColor(TextGraphics tg, TerminalPosition topLeft, int width, int height, TextColor bgColor) {
+        for (int row = 0; row < height; row++) {
+            for (int col = 0; col < width; col++) {
+                TerminalPosition pos = new TerminalPosition(topLeft.getColumn() + col, topLeft.getRow() + row);
+                TextCharacter existing = tg.getCharacter(pos);
+                if (existing != null) {
+                    tg.setCharacter(pos, existing.withBackgroundColor(bgColor));
+                } else {
+                    tg.setCharacter(pos, TextCharacter.DEFAULT_CHARACTER.withBackgroundColor(bgColor));
+                }
+            }
+        }
+    }
+
     // 깔려 있는 카드, 내 손패를 배치하기 위한 함수
     public static void placeCards(TextGraphics tg, TextImage[] cards, TerminalPosition startPos, int maxWidth) {
+        placeCards(tg, cards, startPos, maxWidth, -1);
+    }
+
+    public static void placeCards(TextGraphics tg, TextImage[] cards, TerminalPosition startPos, int maxWidth, int highlightIndex) {
         if (cards == null || cards.length == 0) {
             return;
         }
 
         int numCards = cards.length;
         int cardWidth = cards[0].getSize().getColumns();
-        
+
         int spacing;
 
         if (numCards == 1) {
@@ -117,13 +131,22 @@ public class Util {
             }
         }
 
+        int clampedHighlight = (highlightIndex < 0 || highlightIndex >= numCards) ? -1
+                : highlightIndex;
+
         for (int i = numCards - 1; i >= 0; i--) {
+            if (i == clampedHighlight) continue;
+
             int currentX = startPos.getColumn() + (i * spacing);
-            int currentY = startPos.getRow() - (i % 2);
+            int currentY = startPos.getRow();
 
-            TerminalPosition drawPos = new TerminalPosition(currentX, currentY);
+            tg.drawImage(new TerminalPosition(currentX, currentY), cards[i]);
+        }
 
-            tg.drawImage(drawPos, cards[i]);
+        if (clampedHighlight != -1) {
+            int hx = startPos.getColumn() + (clampedHighlight * spacing);
+            int hy = startPos.getRow() - 1;
+            tg.drawImage(new TerminalPosition(hx, hy), cards[clampedHighlight]);
         }
     }
 }
