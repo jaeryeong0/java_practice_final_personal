@@ -1,3 +1,4 @@
+package tools;
 import com.googlecode.lanterna.TerminalPosition;
 
 public final class UIPositions {
@@ -55,11 +56,9 @@ public final class UIPositions {
     }
 
     // 3. 선택지 및 로그 창 (화면 중앙)
-    public static final class LogArea {
-        // 설명 창의 기준점 (좌측 상단)
-        public static final TerminalPosition TOP_LEFT = new TerminalPosition(97, 17);
+    public static final class TextArea {
         // 텍스트가 시작될 위치
-        public static final TerminalPosition TEXT_START = new TerminalPosition(99, 18);
+        public static final TerminalPosition TEXT_START = new TerminalPosition(96, 18);
     }
 
     // 4. 공용 카드 덱 구역 (화면 중앙 우측)
@@ -71,6 +70,7 @@ public final class UIPositions {
     // 5. 상대방 보드 (화면 우측 하단 - 특정 플레이어 클릭/선택 시 표시)
     public static final class TargetBoard {
         public static final TerminalPosition BOARD = new TerminalPosition(97, 41);
+        public static final TerminalPosition NICKNAME = new TerminalPosition(98, 39);
         static int pos1 = 103;
         static int d = 15;
         public static final TerminalPosition[] BULLETS = {
@@ -82,9 +82,9 @@ public final class UIPositions {
         }; 
         public static final TerminalPosition HAND_COUNT = new TerminalPosition(158, 39); // 남은 카드 장수 표시 위치
         
-        public static final TerminalPosition ROLE_CARD = new TerminalPosition(100, 51);
-        public static final TerminalPosition CHARACTER_CARD = new TerminalPosition(126, 51);
-        public static final TerminalPosition WEAPON_CARD = new TerminalPosition(152, 51);
+        public static final TerminalPosition ROLE_CARD = new TerminalPosition(100, 49);
+        public static final TerminalPosition CHARACTER_CARD = new TerminalPosition(126, 49);
+        public static final TerminalPosition WEAPON_CARD = new TerminalPosition(152, 49);
         
         public static final TerminalPosition PASSIVE_CARDS = new TerminalPosition(180, 45);
         

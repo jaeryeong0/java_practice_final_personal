@@ -1,7 +1,4 @@
-import com.googlecode.lanterna.TerminalPosition;
 import com.googlecode.lanterna.TerminalSize;
-import com.googlecode.lanterna.TextColor;
-import com.googlecode.lanterna.graphics.TextImage;
 import com.googlecode.lanterna.graphics.TextGraphics;
 import com.googlecode.lanterna.input.KeyStroke;
 import com.googlecode.lanterna.input.KeyType;
@@ -10,152 +7,82 @@ import com.googlecode.lanterna.screen.TerminalScreen;
 import com.googlecode.lanterna.terminal.DefaultTerminalFactory;
 import com.googlecode.lanterna.terminal.Terminal;
 import com.googlecode.lanterna.terminal.swing.SwingTerminalFontConfiguration;
-import java.awt.Font;
 
+import java.awt.Font;
 import java.io.IOException;
 
+// 새롭게 만든 씬 매니저와 타이틀 씬 임포트
+import scene.SceneManager;
+import scene.TitleScene;
 
 public class Main {
 
-    // size of screen (number of characters)
     public static final int SCREEN_COL = 270;
     public static final int SCREEN_ROW = 70;
-    
+
     public static void main(String[] args) {
         
         boolean running = true;
         Screen screen = null;
 
         try {
-            //----------------------------------------------------------------
-            // screen initialization
-            //----------------------------------------------------------------
-            
-            // 외부 애뮬레이터 창에서 프로그램 실행하도록 설정.
+            // ----------------------------------------------------------------
+            // 1. Lanterna 터미널 및 스크린 초기화
+            // ----------------------------------------------------------------
             DefaultTerminalFactory factory = new DefaultTerminalFactory();
             factory.setPreferTerminalEmulator(true);
             
-            // 폰트 지정
             Font myFont = new Font("Consolas", Font.PLAIN, 12);
             SwingTerminalFontConfiguration fontConfig = SwingTerminalFontConfiguration.newInstance(myFont);
             factory.setTerminalEmulatorFontConfiguration(fontConfig);
 
-
-            // 화면 크기 세팅
             TerminalSize initialSize = new TerminalSize(SCREEN_COL, SCREEN_ROW);
             factory.setInitialTerminalSize(initialSize);
 
-            // 터미널 실행하고, 화면 크기 조절 불가하도록 설정
             Terminal terminal = factory.createTerminal();
             if (terminal instanceof javax.swing.JFrame) {
                 ((javax.swing.JFrame) terminal).setResizable(false);
             }
 
-            // 스크린 실행
             screen = new TerminalScreen(terminal);
             screen.startScreen();
-            
-            // 커서 숨기기
             screen.setCursorPosition(null);
 
-            // 화면에 그리기 위한 도구 가져오기
             TextGraphics tg = screen.newTextGraphics();
-            
-            // 화면 지우기
-            screen.clear();
 
-            // 배경 그리기
-            tg.drawLine(93, 0, 93, 69, '*');
-
-            // 2. (97, 17) - (269, 17) : 가로선 (X 끝 좌표 270 -> 269)
-            tg.drawLine(93, 16, 269, 16, '*');
-
-            // 3. (97, 40) - (269, 40) : 가로선 (X 끝 좌표 270 -> 269)
-            tg.drawLine(93, 38, 269, 38, '*');
-
-            // 4. (204, 17) - (204, 40) : 세로선
-            tg.drawLine(204, 17, 204, 38, '*');
+            // ----------------------------------------------------------------
+            // 2. SceneManager 초기화 및 첫 화면 설정
+            // ----------------------------------------------------------------
+            SceneManager.getInstance().changeScene(new TitleScene());
 
 
-            Util.placeImage(tg, UIPositions.MyBoard.BOARD, "board");
-            Util.placeImage(tg, UIPositions.MyBoard.BULLETS[0], "bullet", "yellow_bright");
-            TextImage[] cards = {Assets.FRAME, Assets.FRAME, Assets.FRAME, Assets.FRAME};
-            Util.placeCards(tg, cards, UIPositions.MyBoard.PASSIVE_CARDS, 88);
-            Util.placeCards(tg, cards, UIPositions.MyBoard.HAND_CARDS, 88);
-
-            Util.placeImage(tg, UIPositions.TargetBoard.BOARD, "board");
-            Util.placeImage(tg, UIPositions.TargetBoard.BULLETS[0], "bullet", "yellow_bright");
-            Util.placeImage(tg, UIPositions.TargetBoard.HAND_COUNT, "numcards_display");
-            Util.placeCards(tg, cards, UIPositions.TargetBoard.PASSIVE_CARDS, 88);
-            
-            
-            String[] nicks = {"lkjo131", "asfwe123", "wefawef", "aa", "waefawgweag", "b", "dafawef"};
-            int numPlayers = nicks.length;
-            for (int i = 0; i < numPlayers; i++) {
-                Util.placeImage(tg, UIPositions.PlayerList.ICONS[i], "user_icon");
-                TerminalPosition pos = UIPositions.PlayerList.NICKNAMES[i];
-                tg.putString(pos.withColumn(pos.getColumn() - (nicks[i].length())/2), nicks[i]);
-            }
-
-            Util.placeImage(tg, UIPositions.TableCenter.MAIN_DECK, "frame", "yellow");
-            Util.placeImage(tg, UIPositions.TableCenter.DISCARD_PILE, "frame");
-
-            
-                       
-
-            screen.refresh();
-
-            //-----------------------------------------------------------------
+            // ----------------------------------------------------------------
+            // 3. 메인 게임 루프
+            // ----------------------------------------------------------------
             while (running) {
+                // 키 입력 감지
                 KeyStroke key = screen.pollInput();
 
-                //-----------------------------------------------------------------
-                // 플레이어로부터 키 입력 처리
-                //-----------------------------------------------------------------
                 if (key != null) {
-                    // 창 닫는 버튼 눌렀을 때.
+                    // 창 닫기(X버튼) 처리
                     if (key.getKeyType() == KeyType.EOF) {
                         break;
                     }
-
-                    // 키 입력 테스트
-                    // if (key.getKeyType() == KeyType.ArrowDown) {
-                    //     tg.drawImage(new TerminalPosition(3, 8), Assets.VICE);
-                    //     tg.drawImage(new TerminalPosition(6, 2), Util.colorizeTextImage(Assets.BULLET, TextColor.ANSI.YELLOW_BRIGHT));
-                    //     tg.drawImage(new TerminalPosition(100, 0), Util.colorizeTextImage(Assets.FRAME, TextColor.ANSI.RED));
-                    //     tg.drawImage(new TerminalPosition(103, 2), Assets.GUN1);
-                    //     Util.placeImage(tg, UIPositions.MyBoard.WEAPON_CARD, "GUN1", "WHITE");
-
-                    //     screen.refresh();
-                    // }
-                    else if (key.getKeyType() == KeyType.Character) {
-                        if (key.getCharacter() == '1') {
-                            Util.placeImage(tg, UIPositions.MyBoard.WEAPON_CARD, "GUN1");
-                        }
-                        else if (key.getCharacter() == '2') {
-                            Util.placeImage(tg, UIPositions.MyBoard.WEAPON_CARD, "GUN2");
-                        }
-                        else if (key.getCharacter() == '3') {
-                            Util.placeImage(tg, UIPositions.MyBoard.WEAPON_CARD, "GUN3");
-                        }
-                        else if (key.getCharacter() == '4') {
-                            Util.placeImage(tg, UIPositions.MyBoard.WEAPON_CARD, "GUN4");
-                        }
-                        else if (key.getCharacter() == '5') {
-                            Util.placeImage(tg, UIPositions.MyBoard.WEAPON_CARD, "GUN5");
-                        }
-                        screen.refresh();
-                    }
+                    
+                    // 입력된 키를 SceneManager에게 넘김 -> 알아서 현재 씬의 handleInput 실행
+                    SceneManager.getInstance().handleInput(key);
                 }
+
+                // 매 프레임마다 화면을 싹 지우고 새로 그림
+                screen.clear();
                 
-                //-----------------------------------------------------------------
-                // 소켓 통신 결과 업데이트
-                //-----------------------------------------------------------------
+                // SceneManager에게 그리라고 명령 -> 알아서 현재 씬의 render 실행
+                SceneManager.getInstance().render(tg);
+                
+                // 버퍼에 그려진 내용을 실제 터미널에 반영
+                screen.refresh();
 
-
-
-                //-----------------------------------------------------------------
-                // 딜레이 (약 30 tps로 설정)
+                // 딜레이 (약 30 fps)
                 Thread.sleep(33);
             }
 
@@ -172,4 +99,3 @@ public class Main {
         }
     }
 }
-

@@ -1,3 +1,5 @@
+package tools;
+
 import com.googlecode.lanterna.graphics.TextImage;
 
 public class Assets {
@@ -235,6 +237,17 @@ public class Assets {
         "└─────────────────────────────┘"
     };
     //***********************************************
+    // Title Screen
+    //***********************************************
+    private static final String[] TITLE_STRING = {
+        " ██████╗  █████╗ ███╗   ██╗  ██████╗  ██╗",
+        " ██╔══██╗██╔══██╗████╗  ██║ ██╔════╝  ██║",
+        " ██████╔╝███████║██╔██╗ ██║ ██║  ███╗ ██║",
+        " ██╔══██╗██╔══██║██║╚██╗██║ ██║   ██║ ╚═╝",
+        " ██████╔╝██║  ██║██║ ╚████║ ╚██████╔╝ ██╗",
+        " ╚═════╝ ╚═╝  ╚═╝╚═╝  ╚═══╝  ╚═════╝  ╚═╝",
+    };
+    //***********************************************
     public static final TextImage BOARD;
     public static final TextImage BULLET;
     public static final TextImage USER_ICON;
@@ -244,12 +257,22 @@ public class Assets {
     public static final TextImage GUN3;
     public static final TextImage GUN4;
     public static final TextImage GUN5;
-    
+
     public static final TextImage SHERIFF;
     public static final TextImage VICE;
 
     public static final TextImage FRAME;
 
+    public static final TextImage TITLE;
+    public static final TextImage SUBTITLE;
+    public static final TextImage HOST_BTN;
+    public static final TextImage JOIN_BTN;
+    public static final TextImage ARROW_L;
+    public static final TextImage ARROW_R;
+    public static final TextImage INSTRUCTIONS;
+    public static final TextImage POPUP_TITLE;
+    public static final TextImage POPUP_PROMPT;
+    public static final TextImage POPUP_HINT;
 
     static {
         BOARD = Util.createTextImage(BOARD_STRING);
@@ -268,5 +291,15 @@ public class Assets {
 
         FRAME = Util.createTextImage(FRAME_STRING);
 
+        TITLE        = Util.colorizeTextImage(Util.createTextImage(TITLE_STRING), "YELLOW_BRIGHT");
+        SUBTITLE     = Util.createTextImage(new String[]{ "~ The Wild West Card Game ~" });
+        HOST_BTN     = Util.createTextImage(new String[]{ "[ HOST SERVER ]" });
+        JOIN_BTN     = Util.createTextImage(new String[]{ "[ JOIN SERVER ]" });
+        ARROW_L      = Util.createTextImage(new String[]{ ">" });
+        ARROW_R      = Util.createTextImage(new String[]{ "<" });
+        INSTRUCTIONS = Util.createTextImage(new String[]{ "Use Arrow Keys to navigate, Enter to select" });
+        POPUP_TITLE  = Util.createTextImage(new String[]{ "Join Server" });
+        POPUP_PROMPT = Util.createTextImage(new String[]{ "Enter server IP address:" });
+        POPUP_HINT   = Util.createTextImage(new String[]{ "Enter to connect  |  Esc to cancel" });
     }
 }
