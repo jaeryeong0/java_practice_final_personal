@@ -47,7 +47,9 @@ public class GamePlayScene implements Scene {
 
     @Override
     public void enter() {
-        currentTargetIndex          = 0;
+        int myIdx = client.getState().myPlayerIdx;
+        int total = client.getState().players.size();
+        currentTargetIndex = (total > 1) ? (myIdx + 1) % total : 0;
         currentTextMode             = TextAreaMode.LOG;
         currentFocus                = FocusArea.MY_BOARD;
         myBoardCurrentRow           = 2;
@@ -89,8 +91,14 @@ public class GamePlayScene implements Scene {
             if (c == '1') currentTextMode = TextAreaMode.LOG;
             if (c == '2') currentTextMode = TextAreaMode.CARD_INFO;
             int n = Math.max(1, cs.players.size());
-            if (c == 'q' || c == 'Q') currentTargetIndex = (currentTargetIndex - 1 + n) % n;
-            if (c == 'e' || c == 'E') currentTargetIndex = (currentTargetIndex + 1) % n;
+            if (c == 'q' || c == 'Q') {
+                do { currentTargetIndex = (currentTargetIndex - 1 + n) % n; }
+                while (n > 1 && currentTargetIndex == cs.myPlayerIdx);
+            }
+            if (c == 'e' || c == 'E') {
+                do { currentTargetIndex = (currentTargetIndex + 1) % n; }
+                while (n > 1 && currentTargetIndex == cs.myPlayerIdx);
+            }
             if ((c == 'f' || c == 'F') && cs.isMyTurn())
                 client.sendAction("{\"type\":\"END_TURN\"}");
             if ((c == 's' || c == 'S') && cs.isMyTurn())
@@ -225,6 +233,7 @@ public class GamePlayScene implements Scene {
         if (me == null) return;
 
         Util.placeImage(tg, UIPositions.MyBoard.BOARD, Assets.BOARD);
+        tg.putString(UIPositions.MyBoard.NICKNAME, "< " + me.name + " >");
 
         for (int i = 0; i < me.maxHp && i < UIPositions.MyBoard.BULLETS.length; i++)
             Util.placeImage(tg, UIPositions.MyBoard.BULLETS[i], Assets.BULLET,
@@ -232,8 +241,8 @@ public class GamePlayScene implements Scene {
 
         Util.placeImage(tg, UIPositions.MyBoard.ROLE_CARD,      roleImage(me.role));
         Util.placeImage(tg, UIPositions.MyBoard.CHARACTER_CARD, charImage(me.charName));
-        Util.placeImage(tg, UIPositions.MyBoard.WEAPON_CARD,
-            me.weapon != null ? weaponImage(me.weapon.range) : Assets.FRAME2);
+        if (me.weapon != null)
+            Util.placeImage(tg, UIPositions.MyBoard.WEAPON_CARD, weaponImage(me.weapon.range));
 
         int passiveHighlight = -1, handHighlight = -1;
         if (currentFocus == FocusArea.MY_BOARD) {
@@ -258,7 +267,11 @@ public class GamePlayScene implements Scene {
 
     private void renderTargetBoard(TextGraphics tg, ClientGameState cs) {
         if (cs.players.isEmpty()) return;
-        int        idx    = currentTargetIndex % cs.players.size();
+        int n = cs.players.size();
+        if (currentTargetIndex % n == cs.myPlayerIdx)
+            currentTargetIndex = (cs.myPlayerIdx + 1) % n;
+        int        idx    = currentTargetIndex % n;
+        if (idx == cs.myPlayerIdx) return;
         PlayerSnap target = cs.players.get(idx);
 
         Util.placeImage(tg, UIPositions.TargetBoard.BOARD, Assets.BOARD);
@@ -275,8 +288,8 @@ public class GamePlayScene implements Scene {
 
         Util.placeImage(tg, UIPositions.TargetBoard.ROLE_CARD,      roleImage(target.role));
         Util.placeImage(tg, UIPositions.TargetBoard.CHARACTER_CARD, charImage(target.charName));
-        Util.placeImage(tg, UIPositions.TargetBoard.WEAPON_CARD,
-            target.weapon != null ? weaponImage(target.weapon.range) : Assets.FRAME2);
+        if (target.weapon != null)
+            Util.placeImage(tg, UIPositions.TargetBoard.WEAPON_CARD, weaponImage(target.weapon.range));
 
         int passiveHighlight = -1;
         if (currentFocus == FocusArea.TARGET_BOARD) {
@@ -393,8 +406,21 @@ public class GamePlayScene implements Scene {
     }
 
     private TextImage cardSnapImage(CardSnap c) {
-        if (c.weaponRange > 0) return weaponImage(c.weaponRange);
-        return Assets.FRAME;
+        TextImage base = c.weaponRange > 0 ? handWeaponImage(c.weaponRange) : Assets.FRAME;
+        if ("BROWN".equals(c.type)) return Util.colorizeBorder(base, new TextColor.RGB(139, 90, 43));
+        if ("BLUE".equals(c.type))  return Util.colorizeBorder(base, TextColor.ANSI.BLUE);
+        return base;
+    }
+
+    private TextImage handWeaponImage(int range) {
+        switch (range) {
+            case 1:  return Assets.HAND_GUN1;
+            case 2:  return Assets.HAND_GUN2;
+            case 3:  return Assets.HAND_GUN3;
+            case 4:  return Assets.HAND_GUN4;
+            case 5:  return Assets.HAND_GUN5;
+            default: return Assets.FRAME;
+        }
     }
 
     private TextImage weaponImage(int range) {

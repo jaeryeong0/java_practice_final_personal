@@ -73,6 +73,48 @@ public class Util {
         return colorizeTextImage(asset, color);
     }
 
+    // draw overlay centered on base; space chars in overlay are treated as transparent
+    public static TextImage overlayCenter(TextImage base, TextImage overlay) {
+        TerminalSize bs = base.getSize();
+        TerminalSize os = overlay.getSize();
+        BasicTextImage result = new BasicTextImage(bs);
+        for (int r = 0; r < bs.getRows(); r++)
+            for (int c = 0; c < bs.getColumns(); c++)
+                result.setCharacterAt(c, r, base.getCharacterAt(c, r));
+        int colOff = (bs.getColumns() - os.getColumns()) / 2;
+        int rowOff = (bs.getRows()    - os.getRows())    / 2;
+        for (int r = 0; r < os.getRows(); r++) {
+            for (int c = 0; c < os.getColumns(); c++) {
+                TextCharacter ch = overlay.getCharacterAt(c, r);
+                if (ch == null || " ".equals(ch.getCharacterString())) continue;
+                int dc = c + colOff, dr = r + rowOff;
+                if (dc >= 0 && dc < bs.getColumns() && dr >= 0 && dr < bs.getRows())
+                    result.setCharacterAt(dc, dr, ch);
+            }
+        }
+        return result;
+    }
+
+    private static final String BORDER_CHARS = "┌─┐│└┘";
+
+    // colorize only border box-drawing characters, leave interior unchanged
+    public static TextImage colorizeBorder(TextImage originalImage, TextColor color) {
+        if (originalImage == null) return null;
+        TerminalSize size = originalImage.getSize();
+        BasicTextImage newImage = new BasicTextImage(size);
+        for (int row = 0; row < size.getRows(); row++) {
+            for (int col = 0; col < size.getColumns(); col++) {
+                TextCharacter ch = originalImage.getCharacterAt(col, row);
+                if (ch == null) continue;
+                if (BORDER_CHARS.contains(ch.getCharacterString()))
+                    newImage.setCharacterAt(col, row, ch.withForegroundColor(color));
+                else
+                    newImage.setCharacterAt(col, row, ch);
+            }
+        }
+        return newImage;
+    }
+
     // colorName의 기본값을 white로 하기 위함.
     public static void placeImage(TextGraphics tg, TerminalPosition position, TextImage asset) {
         placeImage(tg, position, asset, "white");

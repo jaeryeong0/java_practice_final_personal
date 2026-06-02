@@ -245,38 +245,6 @@ public class GameLogic {
         @Override public boolean canUseBangAsMissed() { return true; }
     }
 
-    public static class ElGringo extends CharDef {
-        public ElGringo() { super("El Gringo", 3); }
-        @Override public void onDamaged(Player self, Player attacker, Game game, int amount) {
-            if (attacker == null) return;
-            for (int i = 0; i < amount; i++) {
-                if (attacker.hand.isEmpty()) break;
-                Card stolen = attacker.hand.remove(new Random().nextInt(attacker.hand.size()));
-                self.hand.add(stolen);
-                game.addLog("(엘 그링고) " + self.name + " 강탈: [" + stolen.name + "]");
-            }
-        }
-    }
-
-    public static class JesseJones extends CharDef {
-        public JesseJones() { super("Jesse Jones", 4); }
-        @Override public void onPhase1(Player self, Game game) {
-            // Draw first card from the alive player with most cards (auto)
-            Player richest = null;
-            for (Player p : game.players)
-                if (p != self && p.hp > 0 && !p.hand.isEmpty())
-                    if (richest == null || p.hand.size() > richest.hand.size()) richest = p;
-            if (richest != null) {
-                Card stolen = richest.hand.remove(new Random().nextInt(richest.hand.size()));
-                self.hand.add(stolen);
-                game.addLog("(제시 존스) " + richest.name + "에게서 첫 드로우!");
-            } else {
-                self.drawCard(game.deck.popCard(), game);
-            }
-            self.drawCard(game.deck.popCard(), game);
-        }
-    }
-
     public static class Jourdonnais extends CharDef {
         public Jourdonnais() { super("Jourdonnais", 4); }
         // Built-in barrel handled in Player.respondToBang
@@ -296,58 +264,9 @@ public class GameLogic {
         // drawCheckFor(player) handles flipping 2 cards in Game
     }
 
-    public static class PaulRegret extends CharDef {
-        public PaulRegret() { super("Paul Regret", 3); }
-        @Override public int getDistanceMod() { return 1; }
-    }
-
-    public static class PedroRamirez extends CharDef {
-        public PedroRamirez() { super("Pedro Ramirez", 4); }
-        @Override public void onPhase1(Player self, Game game) {
-            if (!game.deck.discard.isEmpty()) {
-                Card top = game.deck.discard.remove(game.deck.discard.size() - 1);
-                self.hand.add(top);
-                game.addLog("(페드로) 버린 패에서 [" + top.name + "] 드로우!");
-            } else {
-                self.drawCard(game.deck.popCard(), game);
-            }
-            self.drawCard(game.deck.popCard(), game);
-        }
-    }
-
-    public static class RoseDoolan extends CharDef {
-        public RoseDoolan() { super("Rose Doolan", 4); }
-        @Override public int getRangeMod() { return 1; }
-    }
-
     public static class SidKetchum extends CharDef {
         public SidKetchum() { super("Sid Ketchum", 4); }
         // game.sidKetchumHeal() exposes this ability
-    }
-
-    public static class SlabTheKiller extends CharDef {
-        public SlabTheKiller() { super("Slab the Killer", 4); }
-        // Requires 2 Missed! — handled in Player.respondToBang
-    }
-
-    public static class SuzyLafayette extends CharDef {
-        public SuzyLafayette() { super("Suzy Lafayette", 4); }
-        @Override public void onCardPlayed(Player self, Game game) {
-            if (self.hand.isEmpty()) {
-                game.addLog("(스지 라파예트) 패 비어 드로우!");
-                self.drawCard(game.deck.popCard(), game);
-            }
-        }
-    }
-
-    public static class VultureSam extends CharDef {
-        public VultureSam() { super("Vulture Sam", 4); }
-        @Override public void onKill(Player self, Player killed, Game game) {
-            self.hand.addAll(killed.hand); self.hand.addAll(killed.field);
-            if (killed.weapon != null) self.hand.add(killed.weapon);
-            game.addLog("(벌처 샘) " + killed.name + "의 모든 카드 획득!");
-            killed.hand.clear(); killed.field.clear(); killed.weapon = null;
-        }
     }
 
     public static class WillyTheKid extends CharDef {
@@ -385,7 +304,7 @@ public class GameLogic {
         }
 
         public boolean respondToBang(Game game, Player attacker) {
-            int required = (attacker != null && attacker.character instanceof SlabTheKiller) ? 2 : 1;
+            int required = 1;
 
             // Barrel(s) in field
             for (Card c : field) {
@@ -457,10 +376,8 @@ public class GameLogic {
         public void addLog(String msg) { log.add(msg); if (log.size() > 100) log.remove(0); }
 
         private static final CharDef[] ALL_CHARS = {
-            new BartCassidy(), new BlackJack(),   new CalamityJanet(), new ElGringo(),
-            new JesseJones(),  new Jourdonnais(), new KitCarlson(),    new LuckyDuke(),
-            new PaulRegret(),  new PedroRamirez(),new RoseDoolan(),    new SidKetchum(),
-            new SlabTheKiller(),new SuzyLafayette(),new VultureSam(), new WillyTheKid()
+            new BartCassidy(), new BlackJack(),  new CalamityJanet(), new Jourdonnais(),
+            new KitCarlson(),  new LuckyDuke(), new SidKetchum(),     new WillyTheKid()
         };
 
         public void startGame() {
@@ -685,9 +602,6 @@ public class GameLogic {
             t.character.onDamaged(t, attacker, this, amt); // BartCassidy draws here
             if (t.hp <= 0) {
                 addLog("[사망] " + t.name);
-                for (Player p : players)
-                    if (p != t && p.hp > 0 && p.character instanceof VultureSam)
-                        ((VultureSam) p.character).onKill(p, t, this);
             }
         }
 

@@ -339,6 +339,12 @@ public class Assets {
     public static final TextImage POPUP_PROMPT;
     public static final TextImage POPUP_HINT;
 
+    public static final TextImage HAND_GUN1;
+    public static final TextImage HAND_GUN2;
+    public static final TextImage HAND_GUN3;
+    public static final TextImage HAND_GUN4;
+    public static final TextImage HAND_GUN5;
+
     public static final TextImage WILLY_THE_KID;
     public static final TextImage CALAMITY_JANET;
     static {
@@ -358,6 +364,12 @@ public class Assets {
 
         FRAME = Util.createTextImage(FRAME_STRING);
         FRAME2 = Util.createTextImage(FRAME2_STRING);
+
+        HAND_GUN1 = Util.overlayCenter(FRAME, GUN1);
+        HAND_GUN2 = Util.overlayCenter(FRAME, GUN2);
+        HAND_GUN3 = Util.overlayCenter(FRAME, GUN3);
+        HAND_GUN4 = Util.overlayCenter(FRAME, GUN4);
+        HAND_GUN5 = Util.overlayCenter(FRAME, GUN5);
 
         TITLE        = Util.colorizeTextImage(Util.createTextImage(TITLE_STRING), "YELLOW_BRIGHT");
         SUBTITLE     = Util.createTextImage(new String[]{ "~ The Wild West Card Game ~" });
