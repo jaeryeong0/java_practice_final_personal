@@ -1,0 +1,178 @@
+package net;
+
+import game.GameLogic.*;
+
+import java.io.*;
+import java.net.*;
+import java.util.*;
+import java.util.concurrent.*;
+
+/**
+ * Authoritative multiplayer server.
+ *
+ * Thread model
+ * ┌────────────────────────────────────────────────────────────────┐
+ * │  main thread       ServerSocket.accept() loop                  │
+ * │  client-N thread   ClientHandler.run() – reads actions,        │
+ * │                    calls synchronized handleAction()           │
+ * │                    which mutates Game and broadcasts state      │
+ * └────────────────────────────────────────────────────────────────┘
+ */
+public class BangServer {
+
+    private final int  port;
+    private final int  maxPlayers;
+
+    private final Object gameLock = new Object();
+    private final List<ClientHandler> handlers = new CopyOnWriteArrayList<>();
+    private final List<String>        lobbyNames = new ArrayList<>();
+    private Game game = null;
+
+    public BangServer(int port, int maxPlayers) {
+        this.port       = port;
+        this.maxPlayers = maxPlayers;
+    }
+
+    // -------------------------------------------------------------------------
+
+    public void start() {
+        System.out.println("[Server] Listening on port " + port +
+                           " (need " + maxPlayers + " players)");
+        try (ServerSocket ss = new ServerSocket(port)) {
+            while (true) {
+                Socket sock = ss.accept();
+                sock.setTcpNoDelay(true);
+                ClientHandler h = new ClientHandler(sock, this);
+                handlers.add(h);
+                new Thread(h, "client-" + handlers.size()).start();
+                System.out.println("[Server] Connected: " + sock.getRemoteSocketAddress());
+            }
+        } catch (IOException e) {
+            System.err.println("[Server] Fatal: " + e.getMessage());
+        }
+    }
+
+    // -------------------------------------------------------------------------
+    // Action dispatch (all mutations happen inside gameLock)
+    // -------------------------------------------------------------------------
+
+    void handleAction(ClientHandler h, Map<String, Object> action) {
+        synchronized (gameLock) {
+            String type = str(action, "type");
+
+            // ---- JOIN (lobby phase) ----------------------------------------
+            if ("JOIN".equals(type)) {
+                if (h.playerIdx >= 0) return; // already registered
+                h.playerIdx = lobbyNames.size();
+                lobbyNames.add(str(action, "name"));
+                System.out.println("[Server] Joined: " + lobbyNames.get(h.playerIdx)
+                    + " (" + lobbyNames.size() + "/" + maxPlayers + ")");
+                broadcastLobby();
+                if (lobbyNames.size() == maxPlayers) startGame();
+                return;
+            }
+
+            if (game == null || h.playerIdx < 0) return;
+
+            // ---- General Store (any alive player picks in order) ------------
+            if (game.getState() == GameState.GENERAL_STORE) {
+                if (h.playerIdx != game.getGeneralStorePickerIdx()) return;
+                if ("PICK_STORE".equals(type))
+                    game.pickGeneralStoreCard(num(action, "poolIdx"));
+                broadcastState();
+                return;
+            }
+
+            // ---- Normal turn actions (only current player) ------------------
+            if (h.playerIdx != game.getCurrentPlayerIdx()) return;
+            switch (type) {
+                case "PLAY_CARD":      game.tryPlayCard(num(action, "cardIdx")); break;
+                case "CONFIRM_TARGET": game.confirmTarget(num(action, "targetIdx")); break;
+                case "CANCEL_TARGET":  game.cancelTarget(); break;
+                case "END_TURN":       game.endTurn(); break;
+                case "SID_HEAL":       game.sidKetchumHeal(); break;
+                default: return;
+            }
+            broadcastState();
+        }
+    }
+
+    // -------------------------------------------------------------------------
+
+    private void startGame() {
+        List<Player> players = new ArrayList<>();
+        for (String name : lobbyNames) players.add(new Player(name));
+        game = new Game(players);
+        game.startGame();
+        System.out.println("[Server] Game started with " + players.size() + " players.");
+        broadcastState();
+    }
+
+    private void broadcastState() {
+        for (ClientHandler h : handlers) {
+            if (h.playerIdx >= 0 && h.playerIdx < game.players.size())
+                h.send(Protocol.buildStateForPlayer(game, h.playerIdx));
+        }
+    }
+
+    private void broadcastLobby() {
+        for (ClientHandler h : handlers) {
+            if (h.playerIdx >= 0)
+                h.send(Protocol.buildLobby(lobbyNames, maxPlayers, h.playerIdx));
+        }
+    }
+
+    void removeHandler(ClientHandler h) {
+        handlers.remove(h);
+        System.out.println("[Server] Disconnected player " + h.playerIdx);
+    }
+
+    // -------------------------------------------------------------------------
+
+    private static String str(Map<String, Object> m, String k) {
+        Object v = m.get(k); return v == null ? "" : v.toString();
+    }
+    private static int num(Map<String, Object> m, String k) {
+        Object v = m.get(k); return (v instanceof Number) ? ((Number) v).intValue() : 0;
+    }
+
+    // =========================================================================
+    // Inner class: one thread per connected client
+    // =========================================================================
+
+    static class ClientHandler implements Runnable {
+        private final Socket     socket;
+        private final BangServer server;
+        private PrintWriter writer;
+        volatile int playerIdx = -1;
+
+        ClientHandler(Socket socket, BangServer server) {
+            this.socket = socket;
+            this.server = server;
+        }
+
+        @Override
+        public void run() {
+            try (BufferedReader in = new BufferedReader(
+                    new InputStreamReader(socket.getInputStream(), "UTF-8"))) {
+                writer = new PrintWriter(
+                    new BufferedWriter(new OutputStreamWriter(socket.getOutputStream(), "UTF-8")), true);
+                String line;
+                while ((line = in.readLine()) != null) {
+                    Map<String, Object> action = Protocol.parseAction(line);
+                    server.handleAction(this, action);
+                }
+            } catch (IOException e) {
+                System.err.println("[ClientHandler] " + e.getMessage());
+            } finally {
+                server.removeHandler(this);
+                try { socket.close(); } catch (IOException ignored) {}
+            }
+        }
+
+        void send(String json) {
+            PrintWriter w = writer;
+            if (w != null) w.println(json);
+        }
+    }
+}
