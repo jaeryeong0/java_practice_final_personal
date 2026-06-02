@@ -233,7 +233,7 @@ public class GamePlayScene implements Scene {
         Util.placeImage(tg, UIPositions.MyBoard.ROLE_CARD,      roleImage(me.role));
         Util.placeImage(tg, UIPositions.MyBoard.CHARACTER_CARD, charImage(me.charName));
         Util.placeImage(tg, UIPositions.MyBoard.WEAPON_CARD,
-            me.weapon != null ? weaponImage(me.weapon.range) : Assets.FRAME);
+            me.weapon != null ? weaponImage(me.weapon.range) : Assets.FRAME2);
 
         int passiveHighlight = -1, handHighlight = -1;
         if (currentFocus == FocusArea.MY_BOARD) {
@@ -276,7 +276,7 @@ public class GamePlayScene implements Scene {
         Util.placeImage(tg, UIPositions.TargetBoard.ROLE_CARD,      roleImage(target.role));
         Util.placeImage(tg, UIPositions.TargetBoard.CHARACTER_CARD, charImage(target.charName));
         Util.placeImage(tg, UIPositions.TargetBoard.WEAPON_CARD,
-            target.weapon != null ? weaponImage(target.weapon.range) : Assets.FRAME);
+            target.weapon != null ? weaponImage(target.weapon.range) : Assets.FRAME2);
 
         int passiveHighlight = -1;
         if (currentFocus == FocusArea.TARGET_BOARD) {
@@ -411,12 +411,12 @@ public class GamePlayScene implements Scene {
     private TextImage charImage(String charName) {
         if ("Willy the Kid".equals(charName))   return Assets.WILLY_THE_KID;
         if ("Calamity Janet".equals(charName))  return Assets.CALAMITY_JANET;
-        return Assets.FRAME;
+        return Assets.FRAME2;
     }
 
     private TextImage roleImage(String role) {
         if ("SHERIFF".equals(role)) return Assets.SHERIFF;
         if ("DEPUTY".equals(role))  return Assets.VICE;
-        return Assets.FRAME;
+        return Assets.FRAME2;
     }
 }

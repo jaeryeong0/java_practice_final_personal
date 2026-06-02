@@ -236,6 +236,26 @@ public class Assets {
         "│                             │",
         "└─────────────────────────────┘"
     };
+
+    private static final String[] FRAME2_STRING = {
+        "┌───────────────────────┐",
+        "│                       │",  
+        "│                       │",  
+        "│                       │",  
+        "│                       │",  
+        "│                       │",  
+        "│                       │",  
+        "│                       │",  
+        "│                       │",  
+        "│                       │",  
+        "│                       │",  
+        "│                       │",  
+        "│                       │",  
+        "│                       │",  
+        "│                       │",  
+        "│                       │",  
+        "└───────────────────────┘",
+    };
     //***********************************************
     // Title Screen
     //***********************************************
@@ -306,6 +326,7 @@ public class Assets {
     public static final TextImage VICE;
 
     public static final TextImage FRAME;
+    public static final TextImage FRAME2;
 
     public static final TextImage TITLE;
     public static final TextImage SUBTITLE;
@@ -336,6 +357,7 @@ public class Assets {
         VICE = Util.createTextImage(VICE_STRING);
 
         FRAME = Util.createTextImage(FRAME_STRING);
+        FRAME2 = Util.createTextImage(FRAME2_STRING);
 
         TITLE        = Util.colorizeTextImage(Util.createTextImage(TITLE_STRING), "YELLOW_BRIGHT");
         SUBTITLE     = Util.createTextImage(new String[]{ "~ The Wild West Card Game ~" });
