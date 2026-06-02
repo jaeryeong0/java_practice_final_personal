@@ -248,6 +248,50 @@ public class Assets {
         " ╚═════╝ ╚═╝  ╚═╝╚═╝  ╚═══╝  ╚═════╝  ╚═╝",
     };
     //***********************************************
+    // Character Cards
+    //***********************************************
+
+    private static final String[] WILLY_THE_KID_STRING = {
+        "┌───────────────────────┐",
+        "│     Willy The Kid     │",
+        "│                       │",  
+        "│    ▄▀▄  ▄▀▀▀▄  ▄▀▄    │",
+        "│   █   ▀▀█▄▄▄▄▀▀   █   │",
+        "│  █    ▄▄██▀███     █  │",
+        "│  █   ▄█▀▀   ▀▀▀█   █  │",
+        "│   █  █         █  █   │",
+        "│    ▀▄▄█       █▄▄▀    │",
+        "│        ▀▄   ▄▀        │",
+        "│     ▄▄▀█     █▀▄▄     │",
+        "│   █▀▄▀  █   █  ▀▄▀█   │",
+        "│  █  ▄▀▄ █   █   ▄▀ █  │",
+        "│  █ █   █ █ █  ▄▀ █ █  │",
+        "│ █  █    ▀█  ██   ▀▄▄█ │",
+        "│ █▄▄▄▄▄▄▄▄█▄▄█▄▄▄▄▄▄▄█ │",
+        "└───────────────────────┘",
+    };
+
+        private static final String[] CALAMITY_JANET_STRING = {
+        "┌───────────────────────┐",
+        "│    Calamity Jarnet    │",
+        "│                       │",
+        "│     ▄▄▄ ▄███ ▄▄▄      │",
+        "│     ▀▄ ▀████▀ ▄▀      │",
+        "│       ▀█▀  ▀█▀        │",
+        "│       #▀▄  ▄▀#        │",
+        "│▄     ### ▀▀ ###       │",
+        "│▀█▄   /‾‾‾    ‾‾‾\\     │",
+        "│▄█▀  │  ┌-_/_--┐  │    │",
+        "│▀ \\  │ (        )  │   │",
+        "│ \\ \\/  \\__   __/ │ │   │",
+        "│  \\  /  \\ ‾‾‾ /  │ │   │",
+        "│    ‾   │     │   ││   │",
+        "│        /     \\   /│   │",
+        "│      ▄█████████▄│ │   │",
+        "└───────────────────────┘",
+    };
+
+    //***********************************************
     public static final TextImage BOARD;
     public static final TextImage BULLET;
     public static final TextImage USER_ICON;
@@ -274,6 +318,8 @@ public class Assets {
     public static final TextImage POPUP_PROMPT;
     public static final TextImage POPUP_HINT;
 
+    public static final TextImage WILLY_THE_KID;
+    public static final TextImage CALAMITY_JANET;
     static {
         BOARD = Util.createTextImage(BOARD_STRING);
         BULLET = Util.createTextImage(BULLET_STRING);
@@ -301,5 +347,9 @@ public class Assets {
         POPUP_TITLE  = Util.createTextImage(new String[]{ "Join Server" });
         POPUP_PROMPT = Util.createTextImage(new String[]{ "Enter server IP address:" });
         POPUP_HINT   = Util.createTextImage(new String[]{ "Enter to connect  |  Esc to cancel" });
+
+        WILLY_THE_KID = Util.createTextImage(WILLY_THE_KID_STRING);
+        CALAMITY_JANET = Util.createTextImage(CALAMITY_JANET_STRING);
+
     }
 }
