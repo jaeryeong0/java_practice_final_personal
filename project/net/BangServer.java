@@ -63,8 +63,10 @@ public class BangServer {
             // ---- JOIN (lobby phase) ----------------------------------------
             if ("JOIN".equals(type)) {
                 if (h.playerIdx >= 0) return; // already registered
+                String name = str(action, "name");
+                if (name.isEmpty()) name = "Player" + (lobbyNames.size() + 1);
                 h.playerIdx = lobbyNames.size();
-                lobbyNames.add(str(action, "name"));
+                lobbyNames.add(name);
                 System.out.println("[Server] Joined: " + lobbyNames.get(h.playerIdx)
                     + " (" + lobbyNames.size() + "/" + maxPlayers + ")");
                 broadcastLobby();

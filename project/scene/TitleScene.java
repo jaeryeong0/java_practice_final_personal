@@ -62,7 +62,7 @@ public class TitleScene implements Scene {
                     new Thread(() -> new BangServer(12345, 4).start(), "bang-server").start();
                     Thread.sleep(200);
                     BangClient client = new BangClient();
-                    client.connect("localhost", 12345, "Host");
+                    client.connect("localhost", 12345, "");
                     SceneManager.getInstance().changeScene(new WaitingRoomScene(client));
                 } catch (Exception e) {
                     System.err.println("[TitleScene] Host error: " + e.getMessage());
@@ -81,7 +81,7 @@ public class TitleScene implements Scene {
             // JOIN: connect to the typed IP
             try {
                 BangClient client = new BangClient();
-                client.connect(ipInput.toString().trim(), 12345, "Player");
+                client.connect(ipInput.toString().trim(), 12345, "");
                 SceneManager.getInstance().changeScene(new WaitingRoomScene(client));
             } catch (Exception e) {
                 System.err.println("[TitleScene] Join error: " + e.getMessage());

@@ -23,7 +23,7 @@ public class Main {
 
     // Default: 4-player local server. Override: java Main <name> <maxPlayers>
     public static void main(String[] args) {
-        String name       = args.length > 0 ? args[0] : "You";
+        String name       = args.length > 0 ? args[0] : "";
         int    maxPlayers = args.length > 1 ? Integer.parseInt(args[1]) : 4;
         int    port       = 12345;
 

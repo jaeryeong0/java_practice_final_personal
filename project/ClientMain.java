@@ -41,14 +41,14 @@ public class ClientMain {
         if (args.length > 0 && "local".equals(args[0])) {
             port       = args.length > 1 ? Integer.parseInt(args[1]) : 12345;
             int maxPl  = args.length > 2 ? Integer.parseInt(args[2]) : 4;
-            playerName = args.length > 3 ? args[3] : "You";
+            playerName = args.length > 3 ? args[3] : "";
             final int p = port, mp = maxPl;
             new Thread(() -> new BangServer(p, mp).start(), "local-server").start();
             Thread.sleep(300); // let the server socket open
         } else {
             host       = args.length > 0 ? args[0] : "localhost";
             port       = args.length > 1 ? Integer.parseInt(args[1]) : 12345;
-            playerName = args.length > 2 ? args[2] : "Player";
+            playerName = args.length > 2 ? args[2] : "";
         }
 
         BangClient client = new BangClient();
