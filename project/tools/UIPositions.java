@@ -70,7 +70,6 @@ public final class UIPositions {
     // 5. 상대방 보드 (화면 우측 하단 - 특정 플레이어 클릭/선택 시 표시)
     public static final class TargetBoard {
         public static final TerminalPosition BOARD = new TerminalPosition(97, 41);
-        public static final TerminalPosition NICKNAME = new TerminalPosition(98, 39);
         static int pos1 = 103;
         static int d = 15;
         public static final TerminalPosition[] BULLETS = {

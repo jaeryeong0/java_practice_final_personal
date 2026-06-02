@@ -71,22 +71,24 @@ public class GamePlayScene implements Scene {
         if (type == KeyType.Tab) {
             FocusArea[] areas = FocusArea.values();
             currentFocus = areas[(currentFocus.ordinal() + 1) % areas.length];
-            if (currentFocus == FocusArea.MY_BOARD) {
-                myBoardCurrentRow = 0;
-                myBoardCurrentCol = 0;
-            } else if (currentFocus == FocusArea.TARGET_BOARD) {
-                targetBoardCurrentRow = 0;
-                targetBoardCurrentCol = 0;
-            }
         }
 
-        // 2. (테스트용) 1, 2, 3 키로 중앙 텍스트 영역 모드 변경
+        // 2. Q / E 키: 타겟 플레이어 보드 변경
         else if (type == KeyType.Character) {
             char c = key.getCharacter();
+            if (c == 'q' || c == 'Q') {
+                // 이전 타겟 (자바에서 음수 나머지 연산 방지를 위해 nicks.length를 더함)
+                currentTargetIndex = (currentTargetIndex - 1 + nicks.length) % nicks.length;
+            } 
+            else if (c == 'e' || c == 'E') {
+                // 다음 타겟
+                currentTargetIndex = (currentTargetIndex + 1) % nicks.length;
+            }
+            
+            // (테스트용) 1, 2, 3 키로 중앙 텍스트 영역 모드 변경
             if (c == '1') currentTextMode = TextAreaMode.LOG;
             if (c == '2') currentTextMode = TextAreaMode.CARD_INFO;
             if (c == '3') currentTextMode = TextAreaMode.SELECTION;
-            handleTargetBoardInput(key);
         }
         
         // 3. 방향키: 현재 포커스된 영역에 따라 다르게 작동
@@ -94,9 +96,9 @@ public class GamePlayScene implements Scene {
             if (currentFocus == FocusArea.MY_BOARD) {
                 handleMyBoardInput(type);
             } else if (currentFocus == FocusArea.TARGET_BOARD) {
-                handleTargetBoardInput(key);
-            } else if (currentFocus == FocusArea.TEXT_AREA) {
-                handleTextAreaInput(type);
+                handleTargetBoardInput(type);
+            }else if (currentFocus == FocusArea.TEXT_AREA) {
+                handleCentralAreaInput(type);
             }
         }
     }
@@ -104,14 +106,11 @@ public class GamePlayScene implements Scene {
     // 방향키 로직 헬퍼 메서드: 내 패 영역
     private void handleMyBoardInput(KeyType arrowKey) {
         if (arrowKey == KeyType.ArrowUp) {
-            int prev = myBoardCurrentRow;
             myBoardCurrentRow = Math.max(0, myBoardCurrentRow - 1);
-            if (myBoardCurrentRow != prev) myBoardCurrentCol = 0;
+            myBoardCurrentCol = 0;
         } else if (arrowKey == KeyType.ArrowDown) {
-            int prev = myBoardCurrentRow;
             myBoardCurrentRow = Math.min(2, myBoardCurrentRow + 1);
-            if (myBoardCurrentRow != prev) myBoardCurrentCol = 0;
-            else currentFocus = FocusArea.TEXT_AREA;
+            myBoardCurrentCol = 0;
         }
 
         else if (arrowKey == KeyType.ArrowLeft) {
@@ -124,54 +123,38 @@ public class GamePlayScene implements Scene {
         }
     }
 
-    
-    private void handleTargetBoardInput(KeyStroke key) {
-        KeyType arrowKey = key.getKeyType();
-        if (arrowKey == KeyType.Character) {
-            char c = key.getCharacter();
-            if (c == 'q' || c == 'Q') {
-                currentTargetIndex = (currentTargetIndex - 1 + nicks.length) % nicks.length;
-            } else if (c == 'e' || c == 'E') {
-                currentTargetIndex = (currentTargetIndex + 1) % nicks.length;
-            }
-        } else if (arrowKey == KeyType.ArrowUp) {
-            int prev = targetBoardCurrentRow;
+    private void handleTargetBoardInput(KeyType arrowKey) {
+        if (arrowKey == KeyType.ArrowUp) {
             targetBoardCurrentRow = Math.max(0, targetBoardCurrentRow - 1);
-            if (targetBoardCurrentRow != prev) targetBoardCurrentCol = 0;
+            targetBoardCurrentCol = 0;
         } else if (arrowKey == KeyType.ArrowDown) {
-            int prev = targetBoardCurrentRow;
             targetBoardCurrentRow = Math.min(1, targetBoardCurrentRow + 1);
-            if (targetBoardCurrentRow != prev) targetBoardCurrentCol = 0;
-            else {
-                currentFocus = FocusArea.MY_BOARD;
-                myBoardCurrentRow = 0;
-                myBoardCurrentCol = 0;
-            }
-        } else if (arrowKey == KeyType.ArrowLeft) {
+            targetBoardCurrentCol = 0;
+        }
+
+        else if (arrowKey == KeyType.ArrowLeft) {
             targetBoardCurrentCol = Math.max(0, targetBoardCurrentCol - 1);
-        } else if (arrowKey == KeyType.ArrowRight) {
+        }
+        else if (arrowKey == KeyType.ArrowRight) {
             int[] cols = {2, N_PASSIVE_CARDS - 1};
             int maxCol = cols[targetBoardCurrentRow];
             targetBoardCurrentCol = Math.min(maxCol, targetBoardCurrentCol + 1);
         }
     }
-    
-    private void handleTextAreaInput(KeyType arrowKey) {
-        if (arrowKey == KeyType.ArrowUp) {
-            // 선택지 위로 이동 로직...
-            
-        } else if (arrowKey == KeyType.ArrowDown) {
-            // 선택지 아래로 이동 로직...
-            // TODO: ArrowDown at bottom → currentFocus = TARGET_BOARD
-            // now just change it to target board when arrow down clicked
-            currentFocus = FocusArea.TARGET_BOARD;
-            targetBoardCurrentRow = 0;
-            targetBoardCurrentCol = 0;
+
+    // 방향키 로직 헬퍼 메서드: 중앙 선택지 영역
+    private void handleCentralAreaInput(KeyType arrowKey) {
+        if (currentTextMode == TextAreaMode.SELECTION) {
+            if (arrowKey == KeyType.ArrowUp) {
+                // 선택지 위로 이동 로직...
+            } else if (arrowKey == KeyType.ArrowDown) {
+                // 선택지 아래로 이동 로직...
+            }
         }
     }
-    
+
     // --- render ---
-    
+
     @Override
     public void render(TextGraphics graphics) {
         tickCount++;
@@ -242,8 +225,6 @@ public class GamePlayScene implements Scene {
         }
         
         Util.placeCards(tg, cards, UIPositions.TargetBoard.PASSIVE_CARDS, 88, passiveCardHighlightIndex);
-
-        tg.putString(UIPositions.TargetBoard.NICKNAME, "< " + nicks[currentTargetIndex] + " >");
     }
 
     private void renderPlayerList(TextGraphics tg) {
