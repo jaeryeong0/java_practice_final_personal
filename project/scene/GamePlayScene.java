@@ -200,6 +200,8 @@ public class GamePlayScene implements Scene {
         int passiveCardHighlightIndex = -1;
         int handCardHighlightIndex = -1;
 
+        Util.placeImage(tg, UIPositions.MyBoard.CHARACTER_CARD, Assets.CALAMITY_JANET);
+
         // 포커스가 내 패에 있다면 시각적 표시기 띄우기
         if (currentFocus == FocusArea.MY_BOARD) {
             currentTextMode = TextAreaMode.CARD_INFO;
