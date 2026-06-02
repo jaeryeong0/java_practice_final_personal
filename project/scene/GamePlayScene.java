@@ -406,10 +406,33 @@ public class GamePlayScene implements Scene {
     }
 
     private TextImage cardSnapImage(CardSnap c) {
-        TextImage base = c.weaponRange > 0 ? handWeaponImage(c.weaponRange) : Assets.FRAME;
-        if ("BROWN".equals(c.type)) return Util.colorizeBorder(base, new TextColor.RGB(139, 90, 43));
-        if ("BLUE".equals(c.type))  return Util.colorizeBorder(base, TextColor.ANSI.BLUE);
-        return base;
+        TextImage base = c.weaponRange > 0 ? handWeaponImage(c.weaponRange) : playCardImage(c.name);
+        if ("BROWN".equals(c.type)) base = Util.colorizeBorder(base, new TextColor.RGB(139, 90, 43));
+        else if ("BLUE".equals(c.type)) base = Util.colorizeBorder(base, TextColor.ANSI.BLUE);
+        return Util.stampSuitValue(base, c.suit, c.value);
+    }
+
+    private TextImage playCardImage(String name) {
+        switch (name) {
+            case "Bang!":          return Assets.BANG;
+            case "Missed!":        return Assets.MISSED;
+            case "Beer":           return Assets.BEER;
+            case "Saloon":         return Assets.SALOON;
+            case "Stagecoach":     return Assets.STAGECOACH;
+            case "Wells Fargo":    return Assets.WELLS_FARGO;
+            case "General Store":  return Assets.GENERAL_STORE;
+            case "Duel":           return Assets.DUEL;
+            case "Indians!":       return Assets.INDIANS;
+            case "Gatling":        return Assets.GATLING;
+            case "Panic!":         return Assets.PANIC;
+            case "Cat Balou":      return Assets.CAT_BALOU;
+            case "Barrel":         return Assets.BARREL;
+            case "Mustang":        return Assets.MUSTANG;
+            case "Appaloosa":      return Assets.APPALOOSA;
+            case "Jail":           return Assets.JAIL;
+            case "Dynamite":       return Assets.DYNAMITE;
+            default:               return Assets.FRAME;
+        }
     }
 
     private TextImage handWeaponImage(int range) {
@@ -435,14 +458,22 @@ public class GamePlayScene implements Scene {
     }
 
     private TextImage charImage(String charName) {
-        if ("Willy the Kid".equals(charName))   return Assets.WILLY_THE_KID;
-        if ("Calamity Janet".equals(charName))  return Assets.CALAMITY_JANET;
+        if ("Bart Cassidy".equals(charName))   return Assets.BART_CASSIDY;
+        if ("Black Jack".equals(charName))     return Assets.BLACK_JACK;
+        if ("Calamity Janet".equals(charName)) return Assets.CALAMITY_JANET;
+        if ("Jourdonnais".equals(charName))    return Assets.JOURDONNAIS;
+        if ("Kit Carlson".equals(charName))    return Assets.KIT_CARLSON;
+        if ("Lucky Duke".equals(charName))     return Assets.LUCKY_DUKE;
+        if ("Sid Ketchum".equals(charName))    return Assets.SID_KETCHUM;
+        if ("Willy the Kid".equals(charName))  return Assets.WILLY_THE_KID;
         return Assets.FRAME2;
     }
 
     private TextImage roleImage(String role) {
-        if ("SHERIFF".equals(role)) return Assets.SHERIFF;
-        if ("DEPUTY".equals(role))  return Assets.VICE;
+        if ("SHERIFF".equals(role))  return Assets.SHERIFF;
+        if ("DEPUTY".equals(role))   return Assets.VICE;
+        if ("OUTLAW".equals(role))   return Assets.OUTLAW;
+        if ("RENEGADE".equals(role)) return Assets.RENEGADE;
         return Assets.FRAME2;
     }
 }

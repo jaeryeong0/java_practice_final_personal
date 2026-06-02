@@ -95,6 +95,44 @@ public class Util {
         return result;
     }
 
+    // stamp suit symbol + value at bottom-left of a card image
+    public static TextImage stampSuitValue(TextImage image, String suit, int value) {
+        TerminalSize size = image.getSize();
+        BasicTextImage result = new BasicTextImage(size);
+        for (int r = 0; r < size.getRows(); r++)
+            for (int c = 0; c < size.getColumns(); c++)
+                result.setCharacterAt(c, r, image.getCharacterAt(c, r));
+
+        TextColor suitColor = ("HEART".equals(suit) || "DIAMOND".equals(suit))
+            ? TextColor.ANSI.RED : TextColor.ANSI.WHITE;
+
+        char sc = suitChar(suit);
+        result.setCharacterAt(2, size.getRows() - 3,
+            new TextCharacter(sc).withForegroundColor(suitColor));
+
+        String vs = valueStr(value);
+        for (int i = 0; i < vs.length(); i++)
+            result.setCharacterAt(2 + i, size.getRows() - 2,
+                new TextCharacter(vs.charAt(i)).withForegroundColor(suitColor));
+
+        return result;
+    }
+
+    private static char suitChar(String suit) {
+        if ("HEART".equals(suit))   return '♥';
+        if ("DIAMOND".equals(suit)) return '♦';
+        if ("CLUB".equals(suit))    return '♣';
+        return '♠';
+    }
+
+    private static String valueStr(int value) {
+        if (value == 1)  return "A";
+        if (value == 11) return "J";
+        if (value == 12) return "Q";
+        if (value == 13) return "K";
+        return String.valueOf(value);
+    }
+
     private static final String BORDER_CHARS = "┌─┐│└┘";
 
     // colorize only border box-drawing characters, leave interior unchanged
