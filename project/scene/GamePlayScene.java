@@ -71,6 +71,10 @@ public class GamePlayScene implements Scene {
             handleTargetSelectionInput(key);
             return;
         }
+        if (game.getState() == GameState.GENERAL_STORE) {
+            handleGeneralStoreInput(key);
+            return;
+        }
 
         if (type == KeyType.Tab) {
             FocusArea[] areas = FocusArea.values();
@@ -122,6 +126,22 @@ public class GamePlayScene implements Scene {
             selectedTargetCandidateIdx = 0;
         } else if (type == KeyType.Escape) {
             game.cancelTarget();
+        }
+    }
+
+    private int generalStoreSelectedIdx = 0;
+
+    private void handleGeneralStoreInput(KeyStroke key) {
+        KeyType type = key.getKeyType();
+        List<Card> pool = game.getGeneralStorePool();
+        if (pool.isEmpty()) return;
+        if (type == KeyType.ArrowLeft) {
+            generalStoreSelectedIdx = (generalStoreSelectedIdx - 1 + pool.size()) % pool.size();
+        } else if (type == KeyType.ArrowRight) {
+            generalStoreSelectedIdx = (generalStoreSelectedIdx + 1) % pool.size();
+        } else if (type == KeyType.Enter) {
+            game.pickGeneralStoreCard(generalStoreSelectedIdx);
+            generalStoreSelectedIdx = 0;
         }
     }
 
@@ -210,7 +230,7 @@ public class GamePlayScene implements Scene {
         Util.placeImage(tg, UIPositions.MyBoard.ROLE_CARD, getRoleImage(me.getRole()));
         Util.placeImage(tg, UIPositions.MyBoard.CHARACTER_CARD, getCharacterImage(me.getCharacter()));
         Util.placeImage(tg, UIPositions.MyBoard.WEAPON_CARD,
-            me.getWeapon() != null ? getWeaponImage(me.getWeapon().range) : Assets.FRAME);
+            me.getWeapon() != null ? getWeaponImage(me.getWeapon().range) : Assets.FRAME2);
 
         int passiveHighlight = -1, handHighlight = -1;
         if (currentFocus == FocusArea.MY_BOARD) {
@@ -263,7 +283,7 @@ public class GamePlayScene implements Scene {
         Util.placeImage(tg, UIPositions.TargetBoard.ROLE_CARD, getRoleImage(target.getRole()));
         Util.placeImage(tg, UIPositions.TargetBoard.CHARACTER_CARD, getCharacterImage(target.getCharacter()));
         Util.placeImage(tg, UIPositions.TargetBoard.WEAPON_CARD,
-            target.getWeapon() != null ? getWeaponImage(target.getWeapon().range) : Assets.FRAME);
+            target.getWeapon() != null ? getWeaponImage(target.getWeapon().range) : Assets.FRAME2);
 
         int passiveHighlight = -1;
         if (currentFocus == FocusArea.TARGET_BOARD) {
@@ -316,13 +336,23 @@ public class GamePlayScene implements Scene {
         GameState state = game.getState();
 
         if (state == GameState.SELECT_TARGET) {
-            tg.putString(start, "[ Select Target ] (Arrow L/R, Enter to confirm, Esc cancel)");
+            tg.putString(start, "[ Select Target ] (Arrow L/R, Enter confirm, Esc cancel)");
             List<Player> candidates = game.getTargetCandidates();
             for (int i = 0; i < candidates.size(); i++) {
                 Player c = candidates.get(i);
                 String prefix = (i == selectedTargetCandidateIdx) ? "> " : "  ";
                 tg.putString(start.withRow(start.getRow() + 1 + i),
                     prefix + c.getName() + " HP:" + c.getHp() + "/" + c.getMaxHp());
+            }
+        } else if (state == GameState.GENERAL_STORE) {
+            tg.putString(start, "[ General Store ] (Arrow L/R, Enter to pick)");
+            Player picker = game.players.get(game.getGeneralStorePickerIdx());
+            tg.putString(start.withRow(start.getRow() + 1), "Picking: " + picker.getName());
+            List<Card> pool = game.getGeneralStorePool();
+            for (int i = 0; i < pool.size(); i++) {
+                String prefix = (i == generalStoreSelectedIdx) ? "> " : "  ";
+                tg.putString(start.withRow(start.getRow() + 2 + i),
+                    prefix + "[" + i + "] " + pool.get(i).getName() + " " + pool.get(i).getSuit());
             }
         } else if (state == GameState.GAME_OVER) {
             tg.putString(start, "[ GAME OVER ]");
@@ -383,22 +413,22 @@ public class GamePlayScene implements Scene {
             case 3: return Assets.GUN3;
             case 4: return Assets.GUN4;
             case 5: return Assets.GUN5;
-            default: return Assets.FRAME;
+            default: return Assets.FRAME2;
         }
     }
 
     private TextImage getCharacterImage(CharDef ch) {
         if (ch instanceof WillyTheKid) return Assets.WILLY_THE_KID;
         if (ch instanceof CalamityJanet) return Assets.CALAMITY_JANET;
-        return Assets.FRAME;
+        return Assets.FRAME2;
     }
 
     private TextImage getRoleImage(Role role) {
-        if (role == null) return Assets.FRAME;
+        if (role == null) return Assets.FRAME2;
         switch (role) {
             case SHERIFF: return Assets.SHERIFF;
             case DEPUTY:  return Assets.VICE;
-            default:      return Assets.FRAME;
+            default:      return Assets.FRAME2;
         }
     }
 }
