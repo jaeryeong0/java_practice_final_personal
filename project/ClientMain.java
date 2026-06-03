@@ -64,8 +64,11 @@ public class ClientMain {
             factory.setInitialTerminalSize(new TerminalSize(SCREEN_COL, SCREEN_ROW));
 
             Terminal terminal = factory.createTerminal();
-            if (terminal instanceof javax.swing.JFrame)
-                ((javax.swing.JFrame) terminal).setResizable(false);
+            if (terminal instanceof javax.swing.JFrame) {
+                javax.swing.JFrame frame = (javax.swing.JFrame) terminal;
+                frame.setResizable(false);
+                frame.setTitle("BANG! [" + playerName + "]");
+            }
 
             screen = new TerminalScreen(terminal);
             screen.startScreen();

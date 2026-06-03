@@ -55,7 +55,9 @@ public class Main {
 
             Terminal terminal = factory.createTerminal();
             if (terminal instanceof javax.swing.JFrame) {
-                ((javax.swing.JFrame) terminal).setResizable(false);
+                javax.swing.JFrame frame = (javax.swing.JFrame) terminal;
+                frame.setResizable(false);
+                frame.setTitle("BANG! [" + name + "] HOST");
             }
 
             screen = new TerminalScreen(terminal);

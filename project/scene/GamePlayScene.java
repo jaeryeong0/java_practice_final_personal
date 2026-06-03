@@ -286,7 +286,9 @@ public class GamePlayScene implements Scene {
             .withRow   (UIPositions.TargetBoard.HAND_COUNT.getRow()    + 1),
             "X" + target.handSize);
 
-        Util.placeImage(tg, UIPositions.TargetBoard.ROLE_CARD,      roleImage(target.role));
+        boolean roleVisible = "SHERIFF".equals(target.role) || !target.alive;
+        Util.placeImage(tg, UIPositions.TargetBoard.ROLE_CARD,
+            roleVisible ? roleImage(target.role) : Assets.FRAME2);
         Util.placeImage(tg, UIPositions.TargetBoard.CHARACTER_CARD, charImage(target.charName));
         if (target.weapon != null)
             Util.placeImage(tg, UIPositions.TargetBoard.WEAPON_CARD, weaponImage(target.weapon.range));
