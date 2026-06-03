@@ -7,6 +7,8 @@ import com.googlecode.lanterna.graphics.TextImage;
 import com.googlecode.lanterna.input.KeyStroke;
 import com.googlecode.lanterna.input.KeyType;
 
+import net.BangClient;
+import net.BangServer;
 import tools.Assets;
 import tools.Util;
 
@@ -55,7 +57,16 @@ public class TitleScene implements Scene {
             selectedButton = 1 - selectedButton;
         } else if (key.getKeyType() == KeyType.Enter) {
             if (selectedButton == 0) {
-                SceneManager.getInstance().changeScene(new WaitingRoomScene());
+                // HOST: start embedded server then connect as first player
+                try {
+                    new Thread(() -> new BangServer(12345, 4).start(), "bang-server").start();
+                    Thread.sleep(200);
+                    BangClient client = new BangClient();
+                    client.connect("localhost", 12345, "");
+                    SceneManager.getInstance().changeScene(new WaitingRoomScene(client));
+                } catch (Exception e) {
+                    System.err.println("[TitleScene] Host error: " + e.getMessage());
+                }
             } else {
                 state = State.IP_INPUT;
                 ipInput.setLength(0);
@@ -67,7 +78,15 @@ public class TitleScene implements Scene {
         if (key.getKeyType() == KeyType.Escape) {
             state = State.MAIN_MENU;
         } else if (key.getKeyType() == KeyType.Enter) {
-            SceneManager.getInstance().changeScene(new WaitingRoomScene());
+            // JOIN: connect to the typed IP
+            try {
+                BangClient client = new BangClient();
+                client.connect(ipInput.toString().trim(), 12345, "");
+                SceneManager.getInstance().changeScene(new WaitingRoomScene(client));
+            } catch (Exception e) {
+                System.err.println("[TitleScene] Join error: " + e.getMessage());
+                state = State.MAIN_MENU;
+            }
         } else if (key.getKeyType() == KeyType.Backspace) {
             if (ipInput.length() > 0) {
                 ipInput.deleteCharAt(ipInput.length() - 1);

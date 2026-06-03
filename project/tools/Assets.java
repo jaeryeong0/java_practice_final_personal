@@ -210,12 +210,470 @@ public class Assets {
         "│                       │",
         "└───────────────────────┘",
     };
+
+        private static final String[] OUTLAW_STRING = {
+        "┌───────────────────────┐",
+        "│                       │",
+        "│                       │",
+        "│                       │",
+        "│                       │",
+        "│                       │",
+        "│         OUTLAW        │",
+        "│                       │",
+        "│                       │",
+        "│                       │",
+        "│                       │",
+        "│                       │",
+        "│                       │",
+        "│                       │",
+        "│                       │",
+        "│                       │",
+        "└───────────────────────┘",
+    };
+
+    private static final String[] RENEGADE_STRING = {
+        "┌───────────────────────┐",
+        "│                       │",
+        "│                       │",
+        "│                       │",
+        "│                       │",
+        "│                       │",
+        "│        RENEGADE       │",
+        "│                       │",
+        "│                       │",
+        "│                       │",
+        "│                       │",
+        "│                       │",
+        "│                       │",
+        "│                       │",
+        "│                       │",
+        "│                       │",
+        "└───────────────────────┘",
+    };
+    
     //***********************************************
     // Play Cards
     //***********************************************
     private static final String[] FRAME_STRING = {
         "┌─────────────────────────────┐",
         "│                             │",
+        "│                             │",
+        "│                             │",
+        "│                             │",
+        "│                             │",
+        "│                             │",
+        "│                             │",
+        "│                             │",
+        "│                             │",
+        "│                             │",
+        "│                             │",
+        "│                             │",
+        "│                             │",
+        "│                             │",
+        "│                             │",
+        "│                             │",
+        "│                             │",
+        "│                             │",
+        "│                             │",
+        "└─────────────────────────────┘"
+    };
+
+    private static final String[] FRAME2_STRING = {
+        "┌───────────────────────┐",
+        "│                       │",  
+        "│                       │",  
+        "│                       │",  
+        "│                       │",  
+        "│                       │",  
+        "│                       │",  
+        "│                       │",  
+        "│                       │",  
+        "│                       │",  
+        "│                       │",  
+        "│                       │",  
+        "│                       │",  
+        "│                       │",  
+        "│                       │",  
+        "│                       │",  
+        "└───────────────────────┘",
+    };
+    //***********************************************
+    // Brown Cards
+    //***********************************************
+    private static final String[] BANG_STRING = {
+        "┌─────────────────────────────┐",
+        "│            Bang!            │",
+        "│                             │",
+        "│                             │",
+        "│                             │",
+        "│                             │",
+        "│                             │",
+        "│                             │",
+        "│                             │",
+        "│                             │",
+        "│                             │",
+        "│                             │",
+        "│                             │",
+        "│                             │",
+        "│                             │",
+        "│                             │",
+        "│                             │",
+        "│                             │",
+        "│                             │",
+        "│                             │",
+        "└─────────────────────────────┘"
+    };
+    private static final String[] MISSED_STRING = {
+        "┌─────────────────────────────┐",
+        "│           Missed!           │",
+        "│                             │",
+        "│                             │",
+        "│                             │",
+        "│                             │",
+        "│                             │",
+        "│                             │",
+        "│                             │",
+        "│                             │",
+        "│                             │",
+        "│                             │",
+        "│                             │",
+        "│                             │",
+        "│                             │",
+        "│                             │",
+        "│                             │",
+        "│                             │",
+        "│                             │",
+        "│                             │",
+        "└─────────────────────────────┘"
+    };
+    private static final String[] BEER_STRING = {
+        "┌─────────────────────────────┐",
+        "│            Beer             │",
+        "│                             │",
+        "│                             │",
+        "│                             │",
+        "│                             │",
+        "│                             │",
+        "│                             │",
+        "│                             │",
+        "│                             │",
+        "│                             │",
+        "│                             │",
+        "│                             │",
+        "│                             │",
+        "│                             │",
+        "│                             │",
+        "│                             │",
+        "│                             │",
+        "│                             │",
+        "│                             │",
+        "└─────────────────────────────┘"
+    };
+    private static final String[] SALOON_STRING = {
+        "┌─────────────────────────────┐",
+        "│           Saloon            │",
+        "│                             │",
+        "│                             │",
+        "│                             │",
+        "│                             │",
+        "│                             │",
+        "│                             │",
+        "│                             │",
+        "│                             │",
+        "│                             │",
+        "│                             │",
+        "│                             │",
+        "│                             │",
+        "│                             │",
+        "│                             │",
+        "│                             │",
+        "│                             │",
+        "│                             │",
+        "│                             │",
+        "└─────────────────────────────┘"
+    };
+    private static final String[] STAGECOACH_STRING = {
+        "┌─────────────────────────────┐",
+        "│         Stagecoach          │",
+        "│                             │",
+        "│                             │",
+        "│                             │",
+        "│                             │",
+        "│                             │",
+        "│                             │",
+        "│                             │",
+        "│                             │",
+        "│                             │",
+        "│                             │",
+        "│                             │",
+        "│                             │",
+        "│                             │",
+        "│                             │",
+        "│                             │",
+        "│                             │",
+        "│                             │",
+        "│                             │",
+        "└─────────────────────────────┘"
+    };
+    private static final String[] WELLS_FARGO_STRING = {
+        "┌─────────────────────────────┐",
+        "│         Wells Fargo         │",
+        "│                             │",
+        "│                             │",
+        "│                             │",
+        "│                             │",
+        "│                             │",
+        "│                             │",
+        "│                             │",
+        "│                             │",
+        "│                             │",
+        "│                             │",
+        "│                             │",
+        "│                             │",
+        "│                             │",
+        "│                             │",
+        "│                             │",
+        "│                             │",
+        "│                             │",
+        "│                             │",
+        "└─────────────────────────────┘"
+    };
+    private static final String[] GENERAL_STORE_STRING = {
+        "┌─────────────────────────────┐",
+        "│        General Store        │",
+        "│                             │",
+        "│                             │",
+        "│                             │",
+        "│                             │",
+        "│                             │",
+        "│                             │",
+        "│                             │",
+        "│                             │",
+        "│                             │",
+        "│                             │",
+        "│                             │",
+        "│                             │",
+        "│                             │",
+        "│                             │",
+        "│                             │",
+        "│                             │",
+        "│                             │",
+        "│                             │",
+        "└─────────────────────────────┘"
+    };
+    private static final String[] DUEL_STRING = {
+        "┌─────────────────────────────┐",
+        "│            Duel             │",
+        "│                             │",
+        "│                             │",
+        "│                             │",
+        "│                             │",
+        "│                             │",
+        "│                             │",
+        "│                             │",
+        "│                             │",
+        "│                             │",
+        "│                             │",
+        "│                             │",
+        "│                             │",
+        "│                             │",
+        "│                             │",
+        "│                             │",
+        "│                             │",
+        "│                             │",
+        "│                             │",
+        "└─────────────────────────────┘"
+    };
+    private static final String[] INDIANS_STRING = {
+        "┌─────────────────────────────┐",
+        "│          Indians!           │",
+        "│                             │",
+        "│                             │",
+        "│                             │",
+        "│                             │",
+        "│                             │",
+        "│                             │",
+        "│                             │",
+        "│                             │",
+        "│                             │",
+        "│                             │",
+        "│                             │",
+        "│                             │",
+        "│                             │",
+        "│                             │",
+        "│                             │",
+        "│                             │",
+        "│                             │",
+        "│                             │",
+        "└─────────────────────────────┘"
+    };
+    private static final String[] GATLING_STRING = {
+        "┌─────────────────────────────┐",
+        "│           Gatling           │",
+        "│                             │",
+        "│                             │",
+        "│                             │",
+        "│                             │",
+        "│                             │",
+        "│                             │",
+        "│                             │",
+        "│                             │",
+        "│                             │",
+        "│                             │",
+        "│                             │",
+        "│                             │",
+        "│                             │",
+        "│                             │",
+        "│                             │",
+        "│                             │",
+        "│                             │",
+        "│                             │",
+        "└─────────────────────────────┘"
+    };
+    private static final String[] PANIC_STRING = {
+        "┌─────────────────────────────┐",
+        "│           Panic!            │",
+        "│                             │",
+        "│                             │",
+        "│                             │",
+        "│                             │",
+        "│                             │",
+        "│                             │",
+        "│                             │",
+        "│                             │",
+        "│                             │",
+        "│                             │",
+        "│                             │",
+        "│                             │",
+        "│                             │",
+        "│                             │",
+        "│                             │",
+        "│                             │",
+        "│                             │",
+        "│                             │",
+        "└─────────────────────────────┘"
+    };
+    private static final String[] CAT_BALOU_STRING = {
+        "┌─────────────────────────────┐",
+        "│          Cat Balou          │",
+        "│                             │",
+        "│                             │",
+        "│                             │",
+        "│                             │",
+        "│                             │",
+        "│                             │",
+        "│                             │",
+        "│                             │",
+        "│                             │",
+        "│                             │",
+        "│                             │",
+        "│                             │",
+        "│                             │",
+        "│                             │",
+        "│                             │",
+        "│                             │",
+        "│                             │",
+        "│                             │",
+        "└─────────────────────────────┘"
+    };
+    //***********************************************
+    // Blue Equipment Cards
+    //***********************************************
+    private static final String[] BARREL_STRING = {
+        "┌─────────────────────────────┐",
+        "│           Barrel            │",
+        "│                             │",
+        "│                             │",
+        "│                             │",
+        "│                             │",
+        "│                             │",
+        "│                             │",
+        "│                             │",
+        "│                             │",
+        "│                             │",
+        "│                             │",
+        "│                             │",
+        "│                             │",
+        "│                             │",
+        "│                             │",
+        "│                             │",
+        "│                             │",
+        "│                             │",
+        "│                             │",
+        "└─────────────────────────────┘"
+    };
+    private static final String[] MUSTANG_STRING = {
+        "┌─────────────────────────────┐",
+        "│           Mustang           │",
+        "│                             │",
+        "│                             │",
+        "│                             │",
+        "│                             │",
+        "│                             │",
+        "│                             │",
+        "│                             │",
+        "│                             │",
+        "│                             │",
+        "│                             │",
+        "│                             │",
+        "│                             │",
+        "│                             │",
+        "│                             │",
+        "│                             │",
+        "│                             │",
+        "│                             │",
+        "│                             │",
+        "└─────────────────────────────┘"
+    };
+    private static final String[] APPALOOSA_STRING = {
+        "┌─────────────────────────────┐",
+        "│          Appaloosa          │",
+        "│                             │",
+        "│                             │",
+        "│                             │",
+        "│                             │",
+        "│                             │",
+        "│                             │",
+        "│                             │",
+        "│                             │",
+        "│                             │",
+        "│                             │",
+        "│                             │",
+        "│                             │",
+        "│                             │",
+        "│                             │",
+        "│                             │",
+        "│                             │",
+        "│                             │",
+        "│                             │",
+        "└─────────────────────────────┘"
+    };
+    private static final String[] JAIL_STRING = {
+        "┌─────────────────────────────┐",
+        "│            Jail             │",
+        "│                             │",
+        "│                             │",
+        "│                             │",
+        "│                             │",
+        "│                             │",
+        "│                             │",
+        "│                             │",
+        "│                             │",
+        "│                             │",
+        "│                             │",
+        "│                             │",
+        "│                             │",
+        "│                             │",
+        "│                             │",
+        "│                             │",
+        "│                             │",
+        "│                             │",
+        "│                             │",
+        "└─────────────────────────────┘"
+    };
+    private static final String[] DYNAMITE_STRING = {
+        "┌─────────────────────────────┐",
+        "│          Dynamite           │",
         "│                             │",
         "│                             │",
         "│                             │",
@@ -270,8 +728,8 @@ public class Assets {
         "│ █▄▄▄▄▄▄▄▄█▄▄█▄▄▄▄▄▄▄█ │",
         "└───────────────────────┘",
     };
-
-        private static final String[] CALAMITY_JANET_STRING = {
+    
+    private static final String[] CALAMITY_JANET_STRING = {
         "┌───────────────────────┐",
         "│    Calamity Jarnet    │",
         "│                       │",
@@ -290,6 +748,126 @@ public class Assets {
         "│      ▄█████████▄│ │   │",
         "└───────────────────────┘",
     };
+    
+    private static final String[] KIT_CARLSON_STRING = {
+        "┌───────────────────────┐",
+        "│      Kit Carlson      │",
+        "│                       │",
+        "│                       │",
+        "│                       │",
+        "│                       │",
+        "│                       │",
+        "│                       │",
+        "│                       │",
+        "│                       │",
+        "│                       │",
+        "│                       │",
+        "│                       │",
+        "│                       │",
+        "│                       │",
+        "│                       │",
+        "└───────────────────────┘",
+    };
+    
+    private static final String[] BART_CASSIDY_STRING = {
+        "┌───────────────────────┐",
+        "│     Bart Cassidy      │",
+        "│                       │",
+        "│                       │",
+        "│                       │",
+        "│                       │",
+        "│                       │",
+        "│                       │",
+        "│                       │",
+        "│                       │",
+        "│                       │",
+        "│                       │",
+        "│                       │",
+        "│                       │",
+        "│                       │",
+        "│                       │",
+        "└───────────────────────┘",
+    };
+
+    private static final String[] SID_KETCHUM_STRING = {
+        "┌───────────────────────┐",
+        "│      Sid Ketchum      │",
+        "│                       │",
+        "│                       │",
+        "│                       │",
+        "│                       │",
+        "│                       │",
+        "│                       │",
+        "│                       │",
+        "│                       │",
+        "│                       │",
+        "│                       │",
+        "│                       │",
+        "│                       │",
+        "│                       │",
+        "│                       │",
+        "└───────────────────────┘",
+    };
+
+    private static final String[] LUCKY_DUKE_STRING = {
+        "┌───────────────────────┐",
+        "│      Lucky Duke       │",
+        "│                       │",
+        "│                       │",
+        "│                       │",
+        "│                       │",
+        "│                       │",
+        "│                       │",
+        "│                       │",
+        "│                       │",
+        "│                       │",
+        "│                       │",
+        "│                       │",
+        "│                       │",
+        "│                       │",
+        "│                       │",
+        "└───────────────────────┘",
+    };
+
+    private static final String[] JOURDONNAIS_STRING = {
+        "┌───────────────────────┐",
+        "│      Jourdonnais      │",
+        "│                       │",
+        "│                       │",
+        "│                       │",
+        "│                       │",
+        "│                       │",
+        "│                       │",
+        "│                       │",
+        "│                       │",
+        "│                       │",
+        "│                       │",
+        "│                       │",
+        "│                       │",
+        "│                       │",
+        "│                       │",
+        "└───────────────────────┘",
+    };
+
+    private static final String[] BLACK_JACK_STRING = {
+        "┌───────────────────────┐",
+        "│      Black Jack       │",
+        "│                       │",
+        "│                       │",
+        "│                       │",
+        "│                       │",
+        "│                       │",
+        "│                       │",
+        "│                       │",
+        "│                       │",
+        "│                       │",
+        "│                       │",
+        "│                       │",
+        "│                       │",
+        "│                       │",
+        "│                       │",
+        "└───────────────────────┘",
+    };
 
     //***********************************************
     public static final TextImage BOARD;
@@ -306,6 +884,7 @@ public class Assets {
     public static final TextImage VICE;
 
     public static final TextImage FRAME;
+    public static final TextImage FRAME2;
 
     public static final TextImage TITLE;
     public static final TextImage SUBTITLE;
@@ -318,8 +897,47 @@ public class Assets {
     public static final TextImage POPUP_PROMPT;
     public static final TextImage POPUP_HINT;
 
+    public static final TextImage HAND_GUN1;
+    public static final TextImage HAND_GUN2;
+    public static final TextImage HAND_GUN3;
+    public static final TextImage HAND_GUN4;
+    public static final TextImage HAND_GUN5;
+
+    // Brown Cards
+    public static final TextImage BANG;
+    public static final TextImage MISSED;
+    public static final TextImage BEER;
+    public static final TextImage SALOON;
+    public static final TextImage STAGECOACH;
+    public static final TextImage WELLS_FARGO;
+    public static final TextImage GENERAL_STORE;
+    public static final TextImage DUEL;
+    public static final TextImage INDIANS;
+    public static final TextImage GATLING;
+    public static final TextImage PANIC;
+    public static final TextImage CAT_BALOU;
+
+    // Blue Equipment Cards
+    public static final TextImage BARREL;
+    public static final TextImage MUSTANG;
+    public static final TextImage APPALOOSA;
+    public static final TextImage JAIL;
+    public static final TextImage DYNAMITE;
+
+    // Characters
     public static final TextImage WILLY_THE_KID;
     public static final TextImage CALAMITY_JANET;
+    public static final TextImage KIT_CARLSON;
+    public static final TextImage BART_CASSIDY;
+    public static final TextImage SID_KETCHUM;
+    public static final TextImage LUCKY_DUKE;
+    public static final TextImage JOURDONNAIS;
+    public static final TextImage BLACK_JACK;
+
+    // Roles
+    public static final TextImage OUTLAW;
+    public static final TextImage RENEGADE;
+
     static {
         BOARD = Util.createTextImage(BOARD_STRING);
         BULLET = Util.createTextImage(BULLET_STRING);
@@ -336,6 +954,32 @@ public class Assets {
         VICE = Util.createTextImage(VICE_STRING);
 
         FRAME = Util.createTextImage(FRAME_STRING);
+        FRAME2 = Util.createTextImage(FRAME2_STRING);
+
+        BANG          = Util.createTextImage(BANG_STRING);
+        MISSED        = Util.createTextImage(MISSED_STRING);
+        BEER          = Util.createTextImage(BEER_STRING);
+        SALOON        = Util.createTextImage(SALOON_STRING);
+        STAGECOACH    = Util.createTextImage(STAGECOACH_STRING);
+        WELLS_FARGO   = Util.createTextImage(WELLS_FARGO_STRING);
+        GENERAL_STORE = Util.createTextImage(GENERAL_STORE_STRING);
+        DUEL          = Util.createTextImage(DUEL_STRING);
+        INDIANS       = Util.createTextImage(INDIANS_STRING);
+        GATLING       = Util.createTextImage(GATLING_STRING);
+        PANIC         = Util.createTextImage(PANIC_STRING);
+        CAT_BALOU     = Util.createTextImage(CAT_BALOU_STRING);
+
+        BARREL    = Util.createTextImage(BARREL_STRING);
+        MUSTANG   = Util.createTextImage(MUSTANG_STRING);
+        APPALOOSA = Util.createTextImage(APPALOOSA_STRING);
+        JAIL      = Util.createTextImage(JAIL_STRING);
+        DYNAMITE  = Util.createTextImage(DYNAMITE_STRING);
+
+        HAND_GUN1 = Util.overlayCenter(FRAME, GUN1);
+        HAND_GUN2 = Util.overlayCenter(FRAME, GUN2);
+        HAND_GUN3 = Util.overlayCenter(FRAME, GUN3);
+        HAND_GUN4 = Util.overlayCenter(FRAME, GUN4);
+        HAND_GUN5 = Util.overlayCenter(FRAME, GUN5);
 
         TITLE        = Util.colorizeTextImage(Util.createTextImage(TITLE_STRING), "YELLOW_BRIGHT");
         SUBTITLE     = Util.createTextImage(new String[]{ "~ The Wild West Card Game ~" });
@@ -348,8 +992,16 @@ public class Assets {
         POPUP_PROMPT = Util.createTextImage(new String[]{ "Enter server IP address:" });
         POPUP_HINT   = Util.createTextImage(new String[]{ "Enter to connect  |  Esc to cancel" });
 
-        WILLY_THE_KID = Util.createTextImage(WILLY_THE_KID_STRING);
+        WILLY_THE_KID  = Util.createTextImage(WILLY_THE_KID_STRING);
         CALAMITY_JANET = Util.createTextImage(CALAMITY_JANET_STRING);
+        KIT_CARLSON    = Util.createTextImage(KIT_CARLSON_STRING);
+        BART_CASSIDY   = Util.createTextImage(BART_CASSIDY_STRING);
+        SID_KETCHUM    = Util.createTextImage(SID_KETCHUM_STRING);
+        LUCKY_DUKE     = Util.createTextImage(LUCKY_DUKE_STRING);
+        JOURDONNAIS    = Util.createTextImage(JOURDONNAIS_STRING);
+        BLACK_JACK     = Util.createTextImage(BLACK_JACK_STRING);
 
+        OUTLAW   = Util.createTextImage(OUTLAW_STRING);
+        RENEGADE = Util.createTextImage(RENEGADE_STRING);
     }
 }

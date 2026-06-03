@@ -11,27 +11,41 @@ import com.googlecode.lanterna.terminal.swing.SwingTerminalFontConfiguration;
 import java.awt.Font;
 import java.io.IOException;
 
-// 새롭게 만든 씬 매니저와 타이틀 씬 임포트
+import net.BangClient;
+import net.BangServer;
+import scene.GamePlayScene;
 import scene.SceneManager;
-import scene.TitleScene;
 
 public class Main {
 
     public static final int SCREEN_COL = 270;
     public static final int SCREEN_ROW = 70;
 
+    // Default: 4-player local server. Override: java Main <name> <maxPlayers>
     public static void main(String[] args) {
-        
+        String name       = args.length > 0 ? args[0] : "";
+        int    maxPlayers = args.length > 1 ? Integer.parseInt(args[1]) : 4;
+        int    port       = 12345;
+
         boolean running = true;
         Screen screen = null;
 
         try {
             // ----------------------------------------------------------------
-            // 1. Lanterna 터미널 및 스크린 초기화
+            // 1. 로컬 서버 시작 (동일 JVM 내 별도 스레드)
+            // ----------------------------------------------------------------
+            new Thread(() -> new BangServer(port, maxPlayers).start(), "local-server").start();
+            Thread.sleep(300);
+
+            BangClient client = new BangClient();
+            client.connect("localhost", port, name);
+
+            // ----------------------------------------------------------------
+            // 2. Lanterna 터미널 및 스크린 초기화
             // ----------------------------------------------------------------
             DefaultTerminalFactory factory = new DefaultTerminalFactory();
             factory.setPreferTerminalEmulator(true);
-            
+
             Font myFont = new Font("Consolas", Font.PLAIN, 12);
             SwingTerminalFontConfiguration fontConfig = SwingTerminalFontConfiguration.newInstance(myFont);
             factory.setTerminalEmulatorFontConfiguration(fontConfig);
@@ -41,7 +55,9 @@ public class Main {
 
             Terminal terminal = factory.createTerminal();
             if (terminal instanceof javax.swing.JFrame) {
-                ((javax.swing.JFrame) terminal).setResizable(false);
+                javax.swing.JFrame frame = (javax.swing.JFrame) terminal;
+                frame.setResizable(false);
+                frame.setTitle("BANG! [" + name + "] HOST");
             }
 
             screen = new TerminalScreen(terminal);
@@ -51,9 +67,9 @@ public class Main {
             TextGraphics tg = screen.newTextGraphics();
 
             // ----------------------------------------------------------------
-            // 2. SceneManager 초기화 및 첫 화면 설정
+            // 3. SceneManager 초기화 및 첫 화면 설정
             // ----------------------------------------------------------------
-            SceneManager.getInstance().changeScene(new TitleScene());
+            SceneManager.getInstance().changeScene(new GamePlayScene(client));
 
 
             // ----------------------------------------------------------------

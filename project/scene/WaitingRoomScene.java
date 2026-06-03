@@ -7,7 +7,16 @@ import com.googlecode.lanterna.input.KeyStroke;
 import com.googlecode.lanterna.input.KeyType;
 import java.io.IOException;
 
+import net.BangClient;
+import net.ClientGameState;
+
 public class WaitingRoomScene implements Scene {
+
+    private final BangClient client;
+
+    public WaitingRoomScene(BangClient client) {
+        this.client = client;
+    }
 
     private static final int COLS = 270;
     private static final int ROWS = 70;
@@ -61,8 +70,6 @@ public class WaitingRoomScene implements Scene {
         } else if (type == KeyType.Enter) {
             if (chatInput.length() > 0) {
                 sendChat();
-            } else {
-                SceneManager.getInstance().changeScene(new GamePlayScene());
             }
         } else if (type == KeyType.Backspace) {
             if (chatInput.length() > 0) chatInput.deleteCharAt(chatInput.length() - 1);
@@ -86,12 +93,19 @@ public class WaitingRoomScene implements Scene {
 
     @Override
     public void render(TextGraphics tg) {
+        // Auto-transition once the server moves past LOBBY
+        ClientGameState cs = client.getState();
+        if (!cs.isLobby()) {
+            SceneManager.getInstance().changeScene(new GamePlayScene(client));
+            return;
+        }
+
         tickCount++;
         tg.fillRectangle(new TerminalPosition(0, 0), new TerminalSize(COLS, ROWS), ' ');
         renderBorders(tg);
         renderTitle(tg);
-        renderSectionHeaders(tg);
-        renderParticipants(tg);
+        renderSectionHeaders(tg, cs);
+        renderParticipants(tg, cs);
         renderChat(tg);
         renderInfo(tg);
         renderBottomBar(tg);
@@ -132,27 +146,26 @@ public class WaitingRoomScene implements Scene {
         tg.putString((COLS - title.length()) / 2, 1, title);
     }
 
-    private void renderSectionHeaders(TextGraphics tg) {
-        int ready = 0, total = 0;
-        for (int i = 0; i < playerNicks.length; i++) {
-            if (playerNicks[i] != null) { total++; if (playerReady[i]) ready++; }
-        }
-        tg.putString(2,            ROW_SECT_HDR, "[Players " + ready + "/" + total + "]");
+    private void renderSectionHeaders(TextGraphics tg, ClientGameState cs) {
+        int joined = cs.lobbyNames.size();
+        int max    = cs.maxPlayers;
+        tg.putString(2,            ROW_SECT_HDR, "[Players " + joined + "/" + max + "]");
         tg.putString(COL_DIV1 + 2, ROW_SECT_HDR, "[Chat]");
         tg.putString(COL_DIV2 + 2, ROW_SECT_HDR, "[Game Info / Tips]");
     }
 
-    private void renderParticipants(TextGraphics tg) {
-        for (int i = 0; i < playerNicks.length; i++) {
-            int r = ROW_CONTENT + i * 2;
+    private void renderParticipants(TextGraphics tg, ClientGameState cs) {
+        int slots = cs.maxPlayers;
+        for (int i = 0; i < slots; i++) {
+            int    r    = ROW_CONTENT + i * 2;
             String line;
-            if (playerNicks[i] == null) {
-                line = "  - Empty Slot -";
+            if (i < cs.lobbyNames.size()) {
+                String name = cs.lobbyNames.get(i);
+                String icon = (i == 0) ? "[H]" : "[ ]";
+                String me   = (i == cs.myPlayerIdx) ? " <me>" : "";
+                line = "  " + icon + " " + name + " (Waiting)" + me;
             } else {
-                String icon   = (i == hostIndex) ? "[H]" : (playerReady[i] ? "[+]" : "[ ]");
-                String status = (i == hostIndex) ? "(Host)" : (playerReady[i] ? "(Ready)" : "(Waiting)");
-                String me     = (i == myIndex)   ? " <me>" : "";
-                line = "  " + icon + " " + playerNicks[i] + " " + status + me;
+                line = "  - Empty Slot -";
             }
             tg.putString(1, r, line);
         }
