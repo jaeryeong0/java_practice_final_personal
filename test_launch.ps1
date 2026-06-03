@@ -21,6 +21,34 @@ for ($i = 0; $i -lt $n; $i++) {
     $names  += $name
 }
 
+# Find Java 11
+$java11bin = $null
+$searchRoots = @(
+    "C:\Program Files\Java",
+    "C:\Program Files\Eclipse Adoptium",
+    "C:\Program Files\Microsoft",
+    "C:\Program Files\BellSoft",
+    "C:\Program Files\Amazon Corretto",
+    "C:\Program Files\Zulu"
+)
+foreach ($searchRoot in $searchRoots) {
+    if (Test-Path $searchRoot) {
+        $dir = Get-ChildItem $searchRoot -Directory |
+               Where-Object { $_.Name -match '(jdk|jre)[^\d]*11' } |
+               Select-Object -First 1
+        if ($dir) { $java11bin = Join-Path $dir.FullName "bin"; break }
+    }
+}
+if ($java11bin) {
+    $javac = Join-Path $java11bin "javac.exe"
+    $javaw = Join-Path $java11bin "javaw.exe"
+    Write-Host "[OK]  Java 11: $java11bin" -ForegroundColor Green
+} else {
+    Write-Host "[WARN] Java 11 not found in common paths; using default java." -ForegroundColor Yellow
+    $javac = "javac"
+    $javaw = "javaw"
+}
+
 # Paths
 $lib = Join-Path $root "project\lib\lanterna-3.1.2.jar"
 $bin = Join-Path $root "project\bin"
@@ -36,8 +64,8 @@ $sources = Get-ChildItem -Recurse (Join-Path $root "project") -Filter "*.java" |
            Where-Object { $_.FullName -notlike "*\bin\*" } |
            Select-Object -ExpandProperty FullName
 
-$javaArgs = @("-cp", $lib, "-d", $bin) + $sources
-& javac $javaArgs
+$javaArgs = @("-encoding", "UTF-8", "-cp", $lib, "-d", $bin) + $sources
+& $javac $javaArgs
 
 if ($LASTEXITCODE -ne 0) {
     Write-Host "[FAIL] Compilation failed. Fix errors and try again." -ForegroundColor Red
@@ -51,7 +79,7 @@ Write-Host ""
 Write-Host "[2/3] Launching..." -ForegroundColor Yellow
 
 $launchArgs = @("-cp", $cp, "TestMain") + $names
-Start-Process javaw -ArgumentList $launchArgs
+Start-Process $javaw -ArgumentList $launchArgs
 
 Write-Host ""
 Write-Host "[3/3] Done.  Single window launched." -ForegroundColor Green

@@ -36,8 +36,10 @@ public class TestMain {
         int n    = args.length > 0 ? args.length : 2;
         int port = 12345;
 
-        // start embedded server
-        new Thread(() -> new BangServer(port, n).start(), "test-server").start();
+        // start embedded server (daemon so it dies with the JVM)
+        Thread serverThread = new Thread(() -> new BangServer(port, n).start(), "test-server");
+        serverThread.setDaemon(true);
+        serverThread.start();
         Thread.sleep(300);
 
         // connect all clients
@@ -108,6 +110,7 @@ public class TestMain {
         } finally {
             if (screen != null) try { screen.close(); } catch (IOException ignored) {}
             for (BangClient c : clients) c.disconnect();
+            System.exit(0);
         }
     }
 
