@@ -17,6 +17,7 @@ public class ClientGameState {
     public final List<TargetSnap> targets   = new ArrayList<>();
     public final List<CardSnap>   storePool = new ArrayList<>();
     public final List<String>     log       = new ArrayList<>();
+    public CardSnap topDiscard = null;
 
     // Lobby-only fields
     public final List<String> lobbyNames = new ArrayList<>();

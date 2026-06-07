@@ -85,6 +85,15 @@ public class BangServer {
                 return;
             }
 
+            // Sid Ketchum can heal at any time, even outside their own turn
+            if ("SID_HEAL".equals(type)) {
+                if (h.playerIdx >= 0 && h.playerIdx < game.players.size()) {
+                    game.sidKetchumHeal(game.players.get(h.playerIdx));
+                    broadcastState();
+                }
+                return;
+            }
+
             // ---- Normal turn actions (only current player) ------------------
             if (h.playerIdx != game.getCurrentPlayerIdx()) return;
             switch (type) {
@@ -92,7 +101,6 @@ public class BangServer {
                 case "CONFIRM_TARGET": game.confirmTarget(num(action, "targetIdx")); break;
                 case "CANCEL_TARGET":  game.cancelTarget(); break;
                 case "END_TURN":       game.endTurn(); break;
-                case "SID_HEAL":       game.sidKetchumHeal(); break;
                 default: return;
             }
             broadcastState();

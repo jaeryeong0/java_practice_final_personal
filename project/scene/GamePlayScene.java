@@ -16,14 +16,15 @@ import tools.Util;
 import tools.UIPositions;
 
 import java.io.IOException;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 public class GamePlayScene implements Scene {
 
     // --- scene state ---
 
-    private enum TextAreaMode { LOG, CARD_INFO }
-    private enum FocusArea    { MY_BOARD, TEXT_AREA, TARGET_BOARD }
+    private enum FocusArea { MY_BOARD, TARGET_BOARD }
 
     private final BangClient client;
 
@@ -31,8 +32,7 @@ public class GamePlayScene implements Scene {
     private int selectedTargetCandidateIdx = 0;
     private int generalStoreSelectedIdx   = 0;
 
-    private TextAreaMode currentTextMode;
-    private FocusArea    currentFocus;
+    private FocusArea currentFocus;
 
     private int myBoardCurrentRow;
     private int myBoardCurrentCol;
@@ -50,7 +50,6 @@ public class GamePlayScene implements Scene {
         int myIdx = client.getState().myPlayerIdx;
         int total = client.getState().players.size();
         currentTargetIndex = (total > 1) ? (myIdx + 1) % total : 0;
-        currentTextMode             = TextAreaMode.LOG;
         currentFocus                = FocusArea.MY_BOARD;
         myBoardCurrentRow           = 2;
         myBoardCurrentCol           = 0;
@@ -88,8 +87,6 @@ public class GamePlayScene implements Scene {
         else if (type == KeyType.Escape) { client.sendAction("{\"type\":\"CANCEL_TARGET\"}"); }
         else if (type == KeyType.Character) {
             char c = key.getCharacter();
-            if (c == '1') currentTextMode = TextAreaMode.LOG;
-            if (c == '2') currentTextMode = TextAreaMode.CARD_INFO;
             int n = Math.max(1, cs.players.size());
             if (c == 'q' || c == 'Q') {
                 do { currentTargetIndex = (currentTargetIndex - 1 + n) % n; }
@@ -108,7 +105,6 @@ public class GamePlayScene implements Scene {
                  type == KeyType.ArrowUp    || type == KeyType.ArrowDown) {
             if      (currentFocus == FocusArea.MY_BOARD)     handleMyBoardInput(type, cs);
             else if (currentFocus == FocusArea.TARGET_BOARD) handleTargetBoardInput(type, cs);
-            else if (currentFocus == FocusArea.TEXT_AREA)    handleTextAreaInput(type);
         }
     }
 
@@ -156,7 +152,7 @@ public class GamePlayScene implements Scene {
             int prev = myBoardCurrentRow;
             myBoardCurrentRow = Math.min(2, myBoardCurrentRow + 1);
             if (myBoardCurrentRow != prev) myBoardCurrentCol = 0;
-            else currentFocus = FocusArea.TEXT_AREA;
+            else { currentFocus = FocusArea.TARGET_BOARD; targetBoardCurrentRow = 0; targetBoardCurrentCol = 0; }
         } else if (arrowKey == KeyType.ArrowLeft) {
             myBoardCurrentCol = Math.max(0, myBoardCurrentCol - 1);
         } else if (arrowKey == KeyType.ArrowRight) {
@@ -175,7 +171,7 @@ public class GamePlayScene implements Scene {
             int prev = targetBoardCurrentRow;
             targetBoardCurrentRow = Math.max(0, targetBoardCurrentRow - 1);
             if (targetBoardCurrentRow != prev) targetBoardCurrentCol = 0;
-            else currentFocus = FocusArea.TEXT_AREA;
+            else { currentFocus = FocusArea.MY_BOARD; myBoardCurrentRow = 2; myBoardCurrentCol = 0; }
         } else if (arrowKey == KeyType.ArrowDown) {
             int prev = targetBoardCurrentRow;
             targetBoardCurrentRow = Math.min(1, targetBoardCurrentRow + 1);
@@ -190,11 +186,6 @@ public class GamePlayScene implements Scene {
         }
     }
 
-    private void handleTextAreaInput(KeyType arrowKey) {
-        if      (arrowKey == KeyType.ArrowUp)   { currentFocus = FocusArea.MY_BOARD;     myBoardCurrentRow = 2;    myBoardCurrentCol = 0; }
-        else if (arrowKey == KeyType.ArrowDown) { currentFocus = FocusArea.TARGET_BOARD; targetBoardCurrentRow = 0; targetBoardCurrentCol = 0; }
-    }
-
     // --- render ---
 
     @Override
@@ -205,8 +196,9 @@ public class GamePlayScene implements Scene {
         renderMyBoard(tg, cs);
         renderTargetBoard(tg, cs);
         renderPlayerList(tg, cs);
-        renderTableCenter(tg);
+        renderTableCenter(tg, cs);
         renderTextArea(tg, cs);
+        renderGameLog(tg, cs);
     }
 
     // --- lobby screen ---
@@ -246,7 +238,6 @@ public class GamePlayScene implements Scene {
 
         int passiveHighlight = -1, handHighlight = -1;
         if (currentFocus == FocusArea.MY_BOARD) {
-            currentTextMode = TextAreaMode.CARD_INFO;
             if (myBoardCurrentRow == 0) {
                 TerminalPosition[] slots = { UIPositions.MyBoard.ROLE_CARD,
                     UIPositions.MyBoard.CHARACTER_CARD, UIPositions.MyBoard.WEAPON_CARD };
@@ -295,7 +286,6 @@ public class GamePlayScene implements Scene {
 
         int passiveHighlight = -1;
         if (currentFocus == FocusArea.TARGET_BOARD) {
-            currentTextMode = TextAreaMode.CARD_INFO;
             if (targetBoardCurrentRow == 0) {
                 TerminalPosition[] slots = { UIPositions.TargetBoard.ROLE_CARD,
                     UIPositions.TargetBoard.CHARACTER_CARD, UIPositions.TargetBoard.WEAPON_CARD };
@@ -323,17 +313,24 @@ public class GamePlayScene implements Scene {
         }
     }
 
-    private void renderTableCenter(TextGraphics tg) {
-        Util.placeImage(tg, UIPositions.TableCenter.MAIN_DECK,    Assets.FRAME, "yellow");
-        Util.placeImage(tg, UIPositions.TableCenter.DISCARD_PILE, Assets.FRAME);
+    private void renderGameLog(TextGraphics tg, ClientGameState cs) {
+        TerminalPosition pos = UIPositions.TextArea.LOG;
+        for (int i = 0; i < cs.log.size(); i++) {
+            String line = cs.log.get(i);
+            if (line.length() > 105) line = line.substring(0, 105);
+            tg.putString(pos.withRow(pos.getRow() + i), line);
+        }
+    }
+
+    private void renderTableCenter(TextGraphics tg, ClientGameState cs) {
+        Util.placeImage(tg, UIPositions.TableCenter.MAIN_DECK, Assets.FRAME, "yellow");
+        if (cs.topDiscard != null)
+            Util.placeImage(tg, UIPositions.TableCenter.DISCARD_PILE, cardSnapImage(cs.topDiscard));
     }
 
     private void renderTextArea(TextGraphics tg, ClientGameState cs) {
         TerminalPosition start = UIPositions.TextArea.TEXT_START;
         String           state = cs.gameState;
-
-        if (currentFocus == FocusArea.TEXT_AREA)
-            tg.putString(start.withRow(start.getRow() - 1), "< Text Area >            ");
 
         if ("SELECT_TARGET".equals(state)) {
             tg.putString(start, "[ Select Target ]  L/R=browse  Enter=confirm  Esc=cancel");
@@ -357,45 +354,231 @@ public class GamePlayScene implements Scene {
             }
         } else if ("GAME_OVER".equals(state)) {
             tg.putString(start, "[ GAME OVER ]");
-            renderLogLines(tg, start.withRow(start.getRow() + 1), cs, 15);
-        } else if (currentTextMode == TextAreaMode.CARD_INFO) {
-            tg.putString(start, "[ Card Info ]  F=EndTurn  Enter=Play  Q/E=Browse  S=SidHeal");
-            renderSelectedCardInfo(tg, start.withRow(start.getRow() + 1), cs);
         } else {
-            tg.putString(start, "[ Game Log ]   F=EndTurn  Enter=Play  Q/E=Browse  S=SidHeal");
-            renderLogLines(tg, start.withRow(start.getRow() + 1), cs, 17);
+            tg.putString(start, "F=EndTurn  Enter=Play  Q/E=Browse");
+            renderSelectedCardInfo(tg, UIPositions.TextArea.CARD_INFO, cs);
         }
 
         String curName = cs.currentPlayerIdx < cs.players.size()
             ? cs.players.get(cs.currentPlayerIdx).name : "?";
         tg.putString(start.withRow(start.getRow() + 19),
-            "Turn: " + curName + " | " + state + (cs.isMyTurn() ? " ★ YOUR TURN" : ""));
+            "Turn: " + curName + (cs.isMyTurn() ? " | YOUR TURN" : ""));
     }
 
-    private void renderLogLines(TextGraphics tg, TerminalPosition pos,
-                                ClientGameState cs, int maxLines) {
-        List<String> log = cs.log;
-        int from = Math.max(0, log.size() - maxLines);
-        for (int i = from; i < log.size(); i++) {
-            String line = log.get(i);
-            if (line.length() > 108) line = line.substring(0, 108);
-            tg.putString(pos.withRow(pos.getRow() + (i - from)), line);
-        }
+    // =========================================================================
+    // Card & character description tables (sourced from bang_card_list_en.md)
+    // =========================================================================
+
+    /** Maps each play-card name to its 1-line description. */
+    private static final Map<String, String> CARD_DESCRIPTIONS = new HashMap<>();
+
+    /** Maps each character name to its ability description. */
+    private static final Map<String, String> CHAR_DESCRIPTIONS = new HashMap<>();
+
+    /** Maps each role name (enum .name()) to its description. */
+    private static final Map<String, String> ROLE_DESCRIPTIONS = new HashMap<>();
+
+    static {
+        // --- Brown-bordered action cards ---
+        // '\n' marks where the original bang_card_list_en.md placed a ↵ line-break indicator
+        CARD_DESCRIPTIONS.put("Bang!",
+            "The main method to reduce other players' life points. Play against a player within your weapon's range.\n" +
+            "Limit 1 per turn.");
+        CARD_DESCRIPTIONS.put("Missed!",
+            "Play immediately when targeted by a BANG! - even out of turn - to cancel the shot.");
+        CARD_DESCRIPTIONS.put("Beer",
+            "Regain one life point. Cannot exceed your starting life point total. Can be played out of turn only when\n" +
+            "receiving a lethal hit. No effect when only 2 players remain.");
+        CARD_DESCRIPTIONS.put("Cat Balou",
+            "Force any one player to discard a card (a random card from hand, or a chosen card in play), regardless\n" +
+            "of the distance.");
+        CARD_DESCRIPTIONS.put("Panic!",
+            "Draw a card from a player at distance 1 (a random card from hand, or a chosen card in play). Distance is\n" +
+            "not modified by weapons, only by Mustang/Scope.");
+        CARD_DESCRIPTIONS.put("Duel",
+            "Challenge any other player, regardless of distance. The challenged player may discard a BANG!; if he\n" +
+            "does, you may discard a BANG!, and so on. The first player failing to discard a BANG! loses one life\n" +
+            "point.");
+        CARD_DESCRIPTIONS.put("Indians!",
+            "Each other player may discard a BANG! card, or lose one life point.");
+        CARD_DESCRIPTIONS.put("Stagecoach",
+            "Draw two cards from the top of the deck.");
+        CARD_DESCRIPTIONS.put("General Store",
+            "Turn as many cards face up as the number of players still playing. Starting with you and proceeding\n" +
+            "clockwise, each player chooses one card and adds it to his hand.");
+        CARD_DESCRIPTIONS.put("Gatling",
+            "Shoots a BANG! to all other players, regardless of the distance.");
+        CARD_DESCRIPTIONS.put("Saloon",
+            "All players in play regain one life point.");
+        CARD_DESCRIPTIONS.put("Wells Fargo",
+            "Draw three cards from the top of the deck.");
+
+        // --- Blue-bordered equipment cards ---
+        CARD_DESCRIPTIONS.put("Barrel",
+            "When targeted by a BANG!, you may \"draw!\": on a Heart, the BANG! is cancelled (as if you played a\n" +
+            "Missed!); otherwise, no effect.");
+        CARD_DESCRIPTIONS.put("Dynamite",
+            "At the start of your next turn, before phase 1, you must \"draw!\": on Spade 2-9 it explodes (lose 3 life\n" +
+            "points, card discarded); otherwise, pass it to the player on your left.");
+        CARD_DESCRIPTIONS.put("Jail",
+            "Play in front of any player (not the Sheriff), regardless of distance. That player must \"draw!\" before\n" +
+            "their turn: on a Heart, discard Jail and continue normally; otherwise, discard Jail and skip the turn.");
+        CARD_DESCRIPTIONS.put("Mustang",
+            "The distance between other players and you is increased by 1. You still see other players at normal\n" +
+            "distance.");
+        CARD_DESCRIPTIONS.put("Scope",
+            "You see all other players at a distance decreased by 1 (minimum 1). Other players still see you at\n" +
+            "normal distance.");
+
+        // --- Weapon (gun) cards ---
+        CARD_DESCRIPTIONS.put("Colt .45",
+            "Default weapon. Can shoot players at distance 1. No card needed.");
+        CARD_DESCRIPTIONS.put("Volcanic",
+            "You may play any number of BANG! cards during your turn, but only at distance 1.");
+        CARD_DESCRIPTIONS.put("Schofield",     "Extends your shooting range to distance 2.");
+        CARD_DESCRIPTIONS.put("Remington",     "Extends your shooting range to distance 3.");
+        CARD_DESCRIPTIONS.put("Rev. Carabine", "Extends your shooting range to distance 4.");
+        CARD_DESCRIPTIONS.put("Winchester",    "Extends your shooting range to distance 5.");
+
+        // --- Character ability descriptions ---
+        CHAR_DESCRIPTIONS.put("Willy the Kid",
+            "He can play any number of BANG! cards during his turn.");
+        CHAR_DESCRIPTIONS.put("Calamity Janet",
+            "She can use BANG! cards as Missed! cards and vice versa. If she plays a Missed! as a BANG!, she cannot\n" +
+            "play another BANG! card that turn (unless she has a Volcanic in play).");
+        CHAR_DESCRIPTIONS.put("Kit Carlson",
+            "During phase 1 of his turn, he looks at the top three cards of the deck: he chooses 2 to draw, and puts\n" +
+            "the other one back on the top of the deck, face down.");
+        CHAR_DESCRIPTIONS.put("Bart Cassidy",
+            "Each time he loses a life point, he immediately draws a card from the deck.");
+        CHAR_DESCRIPTIONS.put("Sid Ketchum",
+            "At any time, he may discard 2 cards from his hand to regain one life point. He cannot exceed his\n" +
+            "starting life point total. [S key to activate]");
+        CHAR_DESCRIPTIONS.put("Lucky Duke",
+            "Each time he is required to \"draw!\", he flips the top two cards from the deck, and chooses the result he\n" +
+            "prefers. Discard both cards afterwards.");
+        CHAR_DESCRIPTIONS.put("Jourdonnais",
+            "He is considered to have a Barrel in play at all times; he can \"draw!\" when he is the target of a BANG!,\n" +
+            "and on a Heart he is missed.");
+        CHAR_DESCRIPTIONS.put("Black Jack",
+            "During phase 1 of his turn, he must show the second card he draws: if it's Heart or Diamonds (just like\n" +
+            "a \"draw!\"), he draws one additional card (without revealing it).");
+
+        // --- Role descriptions ---
+        ROLE_DESCRIPTIONS.put("SHERIFF",
+            "Must eliminate all the Outlaws and the Renegade, to protect law and order. Revealed at the start.");
+        ROLE_DESCRIPTIONS.put("DEPUTY",
+            "Helps and protects the Sheriff, and shares his same goal, at all costs. Role kept secret.");
+        ROLE_DESCRIPTIONS.put("OUTLAW",
+            "Wants to kill the Sheriff. Role kept secret. Any player who eliminates an Outlaw draws 3 cards as a\n" +
+            "reward.");
+        ROLE_DESCRIPTIONS.put("RENEGADE",
+            "Wants to be the last character in play. Role kept secret. Wins only if he is the sole survivor when the\n" +
+            "Sheriff dies.");
+    }
+
+    // =========================================================================
+
+    /**
+     * Renders a description string that may contain '\n' line-break markers.
+     * Splits on '\n' and draws each segment on successive rows.
+     * Returns the number of rows consumed, so callers can offset subsequent lines.
+     */
+    private int putDescription(TextGraphics tg, TerminalPosition pos, String desc) {
+        if (desc == null) return 0;
+        String[] lines = desc.split("\n");
+        for (int i = 0; i < lines.length; i++)
+            tg.putString(pos.withRow(pos.getRow() + i), lines[i]);
+        return lines.length;
     }
 
     private void renderSelectedCardInfo(TextGraphics tg, TerminalPosition pos,
                                         ClientGameState cs) {
         PlayerSnap me = cs.myPlayer();
         if (me == null) return;
+
         if (currentFocus == FocusArea.MY_BOARD && myBoardCurrentRow == 2
                 && myBoardCurrentCol < me.hand.size()) {
+            // --- Hand card selected ---
             CardSnap c = me.hand.get(myBoardCurrentCol);
+            // Line +0: card index, name, type, suit, value
             tg.putString(pos, "[" + myBoardCurrentCol + "] " + c.name
                 + "  " + c.type + "  " + c.suit + "  " + c.value);
+            // Lines +1…+N: description split at ↵ markers (suit-bearing card → description below name)
+            int descLines = putDescription(tg, pos.withRow(pos.getRow() + 1), CARD_DESCRIPTIONS.get(c.name));
+            // Play prompt follows immediately after the last description line
             if (cs.isMyTurn())
-                tg.putString(pos.withRow(pos.getRow() + 1), "Press Enter to play.");
+                tg.putString(pos.withRow(pos.getRow() + 1 + descLines), "Press Enter to play.");
+
+        } else if (currentFocus == FocusArea.MY_BOARD && myBoardCurrentRow == 1
+                && myBoardCurrentCol < me.field.size()) {
+            // --- Field (passive/equipment) card selected ---
+            CardSnap c = me.field.get(myBoardCurrentCol);
+            // Line +0: card name, type, suit, value
+            tg.putString(pos, c.name + "  " + c.type + "  " + c.suit + "  " + c.value);
+            // Lines +1…+N: description split at ↵ markers
+            putDescription(tg, pos.withRow(pos.getRow() + 1), CARD_DESCRIPTIONS.get(c.name));
+
         } else if (currentFocus == FocusArea.MY_BOARD && myBoardCurrentRow == 0) {
-            tg.putString(pos, "Role: " + me.role + "   Char: " + me.charName);
+            if (myBoardCurrentCol == 0) {
+                // --- Role card focused (col 0) ---
+                tg.putString(pos, "Role: " + me.role);
+                putDescription(tg, pos.withRow(pos.getRow() + 1), ROLE_DESCRIPTIONS.get(me.role));
+            } else if (myBoardCurrentCol == 1) {
+                // --- Character card focused (col 1) ---
+                tg.putString(pos, "Char: " + me.charName);
+                putDescription(tg, pos.withRow(pos.getRow() + 1), CHAR_DESCRIPTIONS.get(me.charName));
+            } else if (myBoardCurrentCol == 2) {
+                // --- Weapon card focused (col 2) ---
+                if (me.weapon != null) {
+                    tg.putString(pos, "Weapon: " + me.weapon.name + "  range " + me.weapon.range);
+                    putDescription(tg, pos.withRow(pos.getRow() + 1), CARD_DESCRIPTIONS.get(me.weapon.name));
+                } else {
+                    tg.putString(pos, "Weapon: Colt .45 (default)  range 1");
+                    putDescription(tg, pos.withRow(pos.getRow() + 1), CARD_DESCRIPTIONS.get("Colt .45"));
+                }
+            }
+
+        // =====================================================================
+        // TARGET BOARD
+        // =====================================================================
+        } else if (currentFocus == FocusArea.TARGET_BOARD) {
+            int n = cs.players.size();
+            if (n == 0) return;
+            PlayerSnap t = cs.players.get(currentTargetIndex % n);
+
+            if (targetBoardCurrentRow == 0) {
+                if (targetBoardCurrentCol == 0) {
+                    // --- Target role card (col 0) ---
+                    // Role is secret unless the target is the Sheriff or already dead
+                    boolean roleVisible = "SHERIFF".equals(t.role) || !t.alive;
+                    if (roleVisible) {
+                        tg.putString(pos, "Role: " + t.role);
+                        putDescription(tg, pos.withRow(pos.getRow() + 1), ROLE_DESCRIPTIONS.get(t.role));
+                    } else {
+                        tg.putString(pos, "Role: ???  (hidden)");
+                    }
+                } else if (targetBoardCurrentCol == 1) {
+                    // --- Target character card (col 1) ---
+                    tg.putString(pos, "Char: " + t.charName);
+                    putDescription(tg, pos.withRow(pos.getRow() + 1), CHAR_DESCRIPTIONS.get(t.charName));
+                } else if (targetBoardCurrentCol == 2) {
+                    // --- Target weapon card (col 2) ---
+                    if (t.weapon != null) {
+                        tg.putString(pos, "Weapon: " + t.weapon.name + "  range " + t.weapon.range);
+                        putDescription(tg, pos.withRow(pos.getRow() + 1), CARD_DESCRIPTIONS.get(t.weapon.name));
+                    } else {
+                        tg.putString(pos, "Weapon: Colt .45 (default)  range 1");
+                        putDescription(tg, pos.withRow(pos.getRow() + 1), CARD_DESCRIPTIONS.get("Colt .45"));
+                    }
+                }
+            } else if (targetBoardCurrentRow == 1
+                    && targetBoardCurrentCol < t.field.size()) {
+                // --- Target field (passive/equipment) card ---
+                CardSnap c = t.field.get(targetBoardCurrentCol);
+                tg.putString(pos, c.name + "  " + c.type + "  " + c.suit + "  " + c.value);
+                putDescription(tg, pos.withRow(pos.getRow() + 1), CARD_DESCRIPTIONS.get(c.name));
+            }
         }
     }
 
@@ -430,7 +613,7 @@ public class GamePlayScene implements Scene {
             case "Cat Balou":      return Assets.CAT_BALOU;
             case "Barrel":         return Assets.BARREL;
             case "Mustang":        return Assets.MUSTANG;
-            case "Appaloosa":      return Assets.APPALOOSA;
+            case "Scope":          return Assets.APPALOOSA;
             case "Jail":           return Assets.JAIL;
             case "Dynamite":       return Assets.DYNAMITE;
             default:               return Assets.FRAME;

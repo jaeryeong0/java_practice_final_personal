@@ -56,16 +56,17 @@ public class Protocol {
 
         sb.append(",\"store\":").append(cardsJson(game.getGeneralStorePool()));
         kInt(sb, "storePickerIdx", game.getGeneralStorePickerIdx());
+        sb.append(",\"topDiscard\":").append(cardJson(game.getTopDiscard()));
 
-        // last 30 log lines
         List<String> full = game.getLog();
-        int from = Math.max(0, full.size() - 30);
+        int from = Math.max(0, full.size() - 8);
         sb.append(",\"log\":[");
         for (int i = from; i < full.size(); i++) {
             if (i > from) sb.append(",");
             sb.append("\"").append(esc(full.get(i))).append("\"");
         }
-        sb.append("]}");
+        sb.append("]");
+        sb.append("}");
         return sb.toString();
     }
 
@@ -155,6 +156,12 @@ public class Protocol {
             for (Object co : list(root, "store"))
                 cs.storePool.add(cardSnap((Map<String,Object>) co));
 
+            Object td = root.get("topDiscard");
+            if (td instanceof Map) {
+                Map<String,Object> tdm = (Map<String,Object>) td;
+                cs.topDiscard = cardSnap(tdm);
+            }
+
             for (Object lo : list(root, "log"))
                 cs.log.add(lo != null ? lo.toString() : "");
 
@@ -191,6 +198,17 @@ public class Protocol {
             sb.append("}");
         }
         return sb.append("]").toString();
+    }
+
+    private static String cardJson(Card c) {
+        if (c == null) return "null";
+        StringBuilder sb = new StringBuilder("{");
+        sb.append("\"n\":\"").append(esc(c.name)).append("\"")
+          .append(",\"s\":\"").append(c.suit.name()).append("\"")
+          .append(",\"v\":").append(c.value)
+          .append(",\"t\":\"").append(c.type.name()).append("\"");
+        if (c instanceof WeaponCard) sb.append(",\"r\":").append(((WeaponCard) c).range);
+        return sb.append("}").toString();
     }
 
     private static String weaponJson(WeaponCard w) {
