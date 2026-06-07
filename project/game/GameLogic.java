@@ -558,13 +558,19 @@ public class GameLogic {
                     if (check == null || check.suit != Suit.HEART) { addLog(p.name + " failed jail check!"); return false; }
                     addLog(p.name + " escaped jail!");
                 } else if (c instanceof DynamiteCard) {
+                    addLog("[Dynamite] Draw check...");
                     Card check = drawCheckFor(p);
                     if (check != null && check.suit == Suit.SPADE && check.value >= 2 && check.value <= 9) {
                         addLog("Dynamite explodes! " + p.name + " -3HP");
                         loseHP(p, null, 3); it.remove(); deck.discard(c);
                     } else {
-                        addLog("Dynamite passes to next player..");
-                        it.remove(); players.get((players.indexOf(p) + 1) % players.size()).field.add(c);
+                        // Pass to the next alive player (skip dead players)
+                        int nextIdx = (players.indexOf(p) + 1) % players.size();
+                        while (players.get(nextIdx).hp <= 0)
+                            nextIdx = (nextIdx + 1) % players.size();
+                        addLog("Dynamite passes to " + players.get(nextIdx).name + ".");
+                        it.remove();
+                        players.get(nextIdx).field.add(c);
                     }
                 }
             }
@@ -616,26 +622,43 @@ public class GameLogic {
         public void loseHP(Player t, Player attacker, int amt) {
             t.hp -= amt;
             addLog(t.name + " -" + amt + "HP! Current:" + t.hp + "/" + t.maxHp);
-            t.character.onDamaged(t, attacker, this, amt); // BartCassidy draws here
-            if (t.hp <= 0) {
-                addLog("[DEAD] " + t.name);
-                // Outlaw eliminated: the killer draws 3 cards as reward
-                if (t.role == Role.OUTLAW && attacker != null) {
-                    addLog("[REWARD] " + attacker.name + " draws 3 bounty cards!");
-                    attacker.drawCard(deck.popCard(), this);
-                    attacker.drawCard(deck.popCard(), this);
-                    attacker.drawCard(deck.popCard(), this);
-                }
-                // Sheriff kills own Deputy: Sheriff discards all hand cards and equipment
-                if (t.role == Role.DEPUTY && attacker != null && attacker.role == Role.SHERIFF) {
-                    addLog("[PENALTY] Sheriff killed Deputy! All hand/equipment discarded!");
-                    new ArrayList<>(attacker.hand).forEach(deck::discard);
-                    attacker.hand.clear();
-                    if (attacker.weapon != null) { deck.discard(attacker.weapon); attacker.weapon = null; }
-                    new ArrayList<>(attacker.field).forEach(deck::discard);
-                    attacker.field.clear();
+            t.character.onDamaged(t, attacker, this, amt);
+            if (tryBeerRescue(t)) return; // saved by Beer — treat as if death never happened
+            if (t.hp > 0) return;         // took damage but still alive
+            // --- death ---
+            addLog("[DEAD] " + t.name);
+            if (t.role == Role.OUTLAW && attacker != null) {
+                addLog("[REWARD] " + attacker.name + " draws 3 bounty cards!");
+                attacker.drawCard(deck.popCard(), this);
+                attacker.drawCard(deck.popCard(), this);
+                attacker.drawCard(deck.popCard(), this);
+            }
+            if (t.role == Role.DEPUTY && attacker != null && attacker.role == Role.SHERIFF) {
+                addLog("[PENALTY] Sheriff killed Deputy! All hand/equipment discarded!");
+                new ArrayList<>(attacker.hand).forEach(deck::discard);
+                attacker.hand.clear();
+                if (attacker.weapon != null) { deck.discard(attacker.weapon); attacker.weapon = null; }
+                new ArrayList<>(attacker.field).forEach(deck::discard);
+                attacker.field.clear();
+            }
+        }
+
+        // Beer rescue: auto-use Beer when hp reaches exactly 0.
+        // hp == 0 guarantees 1 Beer restores to 1 HP (covers Dynamite only when pre-damage hp was 3).
+        // Beer has no effect when only 2 or fewer players remain.
+        private boolean tryBeerRescue(Player t) {
+            if (t.hp != 0) return false;
+            long otherAlive = players.stream().filter(pl -> pl.hp > 0).count();
+            if (otherAlive + 1 <= 2) return false; // t counts as alive (not yet dead)
+            for (int i = 0; i < t.hand.size(); i++) {
+                if (t.hand.get(i) instanceof BeerCard) {
+                    deck.discard(t.hand.remove(i));
+                    t.hp = 1;
+                    addLog("(Beer) " + t.name + " survives! HP: 1/" + t.maxHp);
+                    return true;
                 }
             }
+            return false;
         }
 
         private boolean checkGameOver() {
