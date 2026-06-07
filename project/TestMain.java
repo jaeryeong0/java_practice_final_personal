@@ -33,8 +33,14 @@ public class TestMain {
     static final int SCREEN_ROW = 70;
 
     public static void main(String[] args) throws Exception {
-        int n    = args.length > 0 ? args.length : 2;
+        int n    = args.length > 0 ? args.length : 4;
         int port = 12345;
+
+        if (n < 4 || n > 7) {
+            System.err.println("Error: player count must be 4–7 (got " + n + ").");
+            System.err.println("Usage: java -jar TestMain.jar <name1> <name2> ... <nameN>");
+            System.exit(1);
+        }
 
         // start embedded server (daemon so it dies with the JVM)
         Thread serverThread = new Thread(() -> new BangServer(port, n).start(), "test-server");

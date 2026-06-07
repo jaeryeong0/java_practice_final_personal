@@ -29,7 +29,7 @@ public class GameLogic {
         @Override public void execute(Player user, Player target, Game game) {
             if (target == null) return;
             user.hasPlayedBang = true;
-            game.addLog("[!] " + user.name + " -> " + target.name + " 뱅!");
+            game.addLog("[!] " + user.name + " -> " + target.name + " Bang!");
             if (!target.respondToBang(game, user)) game.loseHP(target, user, 1);
         }
     }
@@ -42,8 +42,6 @@ public class GameLogic {
     public static class BeerCard extends Card {
         public BeerCard() { super("Beer", Suit.HEART, 1, CardType.BROWN); }
         @Override public void execute(Player user, Player target, Game game) {
-            long alive = game.players.stream().filter(p -> p.hp > 0).count();
-            if (alive <= 2) { game.addLog("맥주: 2인 이하 무효."); return; }
             game.getHP(user, 1);
         }
     }
@@ -51,7 +49,7 @@ public class GameLogic {
     public static class SaloonCard extends Card {
         public SaloonCard() { super("Saloon", Suit.HEART, 1, CardType.BROWN); }
         @Override public void execute(Player user, Player target, Game game) {
-            game.addLog("[!] 살롱! 모두 HP+1");
+            game.addLog("[!] Saloon! All players HP+1");
             for (Player p : game.players) if (p.hp > 0) game.getHP(p, 1);
         }
     }
@@ -59,6 +57,7 @@ public class GameLogic {
     public static class StagecoachCard extends Card {
         public StagecoachCard() { super("Stagecoach", Suit.SPADE, 9, CardType.BROWN); }
         @Override public void execute(Player user, Player target, Game game) {
+            game.addLog("[!] " + user.name + " (Stagecoach) drew 2 cards.");
             user.drawCard(game.deck.popCard(), game); user.drawCard(game.deck.popCard(), game);
         }
     }
@@ -66,6 +65,7 @@ public class GameLogic {
     public static class WellsFargoCard extends Card {
         public WellsFargoCard() { super("Wells Fargo", Suit.HEART, 3, CardType.BROWN); }
         @Override public void execute(Player user, Player target, Game game) {
+            game.addLog("[!] " + user.name + " (Wells Fargo) drew 3 cards.");
             user.drawCard(game.deck.popCard(), game);
             user.drawCard(game.deck.popCard(), game);
             user.drawCard(game.deck.popCard(), game);
@@ -75,7 +75,7 @@ public class GameLogic {
     public static class GeneralStoreCard extends Card {
         public GeneralStoreCard() { super("General Store", Suit.SPADE, 9, CardType.BROWN); }
         @Override public void execute(Player user, Player target, Game game) {
-            game.addLog("[!] 잡화점!");
+            game.addLog("[!] General Store!");
             game.startGeneralStore(user);
         }
     }
@@ -83,7 +83,7 @@ public class GameLogic {
     public static class DuelCard extends Card {
         public DuelCard() { super("Duel", Suit.CLUB, 7, CardType.BROWN); }
         @Override public void execute(Player user, Player target, Game game) {
-            game.addLog("[!] " + user.name + " vs " + target.name + " 결투!");
+            game.addLog("[!] " + user.name + " vs " + target.name + " Duel!");
             Player attacker = user, defender = target;
             while (true) {
                 if (!defender.discardForBang(game)) { game.loseHP(defender, attacker, 1); break; }
@@ -95,7 +95,7 @@ public class GameLogic {
     public static class IndiansCard extends Card {
         public IndiansCard() { super("Indians!", Suit.DIAMOND, 1, CardType.BROWN); }
         @Override public void execute(Player user, Player target, Game game) {
-            game.addLog("[!] 인디언 습격!");
+            game.addLog("[!] Indians!");
             for (Player p : game.players)
                 if (p != user && p.hp > 0 && !p.discardForBang(game)) game.loseHP(p, user, 1);
         }
@@ -104,7 +104,7 @@ public class GameLogic {
     public static class GatlingCard extends Card {
         public GatlingCard() { super("Gatling", Suit.HEART, 10, CardType.BROWN); }
         @Override public void execute(Player user, Player target, Game game) {
-            game.addLog("[!] 개틀링!");
+            game.addLog("[!] Gatling!");
             for (Player p : game.players)
                 if (p != user && p.hp > 0 && !p.respondToBang(game, user)) game.loseHP(p, user, 1);
         }
@@ -118,13 +118,13 @@ public class GameLogic {
             List<Card> pool = new ArrayList<>(target.hand);
             pool.addAll(target.field);
             if (target.weapon != null) pool.add(target.weapon);
-            if (pool.isEmpty()) { game.addLog(target.name + " 카드 없음."); return; }
+            if (pool.isEmpty()) { game.addLog(target.name + " has no cards."); return; }
             Card stolen = pool.get(new Random().nextInt(pool.size()));
-            if (target.hand.remove(stolen)) {}
-            else if (target.field.remove(stolen)) {}
-            else if (stolen == target.weapon) target.weapon = null;
+            boolean fromHand = target.hand.remove(stolen);
+            if (!fromHand) { if (!target.field.remove(stolen)) if (stolen == target.weapon) target.weapon = null; }
             user.hand.add(stolen);
-            game.addLog(user.name + "가 " + target.name + "의 [" + stolen.name + "] 강탈!");
+            if (fromHand) game.addLog(user.name + " stole a card from " + target.name + "'s hand!");
+            else game.addLog(user.name + " stole [" + stolen.name + "] from " + target.name + "!");
         }
     }
 
@@ -135,13 +135,13 @@ public class GameLogic {
             List<Card> pool = new ArrayList<>(target.hand);
             pool.addAll(target.field);
             if (target.weapon != null) pool.add(target.weapon);
-            if (pool.isEmpty()) { game.addLog(target.name + " 카드 없음."); return; }
+            if (pool.isEmpty()) { game.addLog(target.name + " has no cards."); return; }
             Card c = pool.get(new Random().nextInt(pool.size()));
             if (target.hand.remove(c)) {}
             else if (target.field.remove(c)) {}
             else if (c == target.weapon) target.weapon = null;
             game.deck.discard(c);
-            game.addLog(target.name + "의 [" + c.name + "] 버림.");
+            game.addLog("[" + c.name + "] discarded from " + target.name + ".");
         }
     }
 
@@ -154,7 +154,7 @@ public class GameLogic {
         @Override public void execute(Player user, Player target, Game game) {
             if (user.weapon != null) game.deck.discard(user.weapon);
             user.weapon = this;
-            game.addLog(user.name + " [" + name + "] 장착!");
+            game.addLog(user.name + " equipped [" + name + "]!");
         }
     }
 
@@ -165,21 +165,21 @@ public class GameLogic {
     public static class BarrelCard extends Card {
         public BarrelCard() { super("Barrel", Suit.SPADE, 12, CardType.BLUE); }
         @Override public void execute(Player user, Player target, Game game) {
-            user.field.add(this); game.addLog(user.name + " [술통] 장착!");
+            user.field.add(this); game.addLog(user.name + " equipped [Barrel]!");
         }
     }
 
     public static class MustangCard extends Card {
         public MustangCard() { super("Mustang", Suit.HEART, 6, CardType.BLUE); }
         @Override public void execute(Player user, Player target, Game game) {
-            user.field.add(this); game.addLog(user.name + " [무스탕] 장착!");
+            user.field.add(this); game.addLog(user.name + " equipped [Mustang]!");
         }
     }
 
-    public static class AppaloosaCard extends Card {
-        public AppaloosaCard() { super("Appaloosa", Suit.SPADE, 9, CardType.BLUE); }
+    public static class ScopeCard extends Card {
+        public ScopeCard() { super("Scope", Suit.SPADE, 9, CardType.BLUE); }
         @Override public void execute(Player user, Player target, Game game) {
-            user.field.add(this); game.addLog(user.name + " [아팔루사] 장착!");
+            user.field.add(this); game.addLog(user.name + " equipped [Scope]!");
         }
     }
 
@@ -187,15 +187,15 @@ public class GameLogic {
         public JailCard() { super("Jail", Suit.SPADE, 4, CardType.BLUE); }
         @Override public void execute(Player user, Player target, Game game) {
             if (target == null) return;
-            if (target.role == Role.SHERIFF) { game.addLog("보안관은 감옥 불가."); user.hand.add(this); return; }
-            target.field.add(this); game.addLog(target.name + " 감옥!");
+            if (target.role == Role.SHERIFF) { game.addLog("Sheriff cannot be jailed."); user.hand.add(this); return; }
+            target.field.add(this); game.addLog(target.name + " jailed!");
         }
     }
 
     public static class DynamiteCard extends Card {
         public DynamiteCard() { super("Dynamite", Suit.HEART, 2, CardType.BLUE); }
         @Override public void execute(Player user, Player target, Game game) {
-            user.field.add(this); game.addLog(user.name + " [다이너마이트] 설치!");
+            user.field.add(this); game.addLog(user.name + " planted [Dynamite]!");
         }
     }
 
@@ -222,6 +222,7 @@ public class GameLogic {
     public static class BartCassidy extends CharDef {
         public BartCassidy() { super("Bart Cassidy", 4); }
         @Override public void onDamaged(Player self, Player attacker, Game game, int amount) {
+            game.addLog("(Bart Cassidy) " + self.name + " drew " + amount + " card(s).");
             for (int i = 0; i < amount; i++) self.drawCard(game.deck.popCard(), game);
         }
     }
@@ -233,7 +234,7 @@ public class GameLogic {
             Card second = game.deck.popCard();
             self.drawCard(second, game);
             if (second != null && (second.suit == Suit.HEART || second.suit == Suit.DIAMOND)) {
-                game.addLog("(블랙잭) 추가 드로우!");
+                game.addLog("(Black Jack) Extra draw!");
                 self.drawCard(game.deck.popCard(), game);
             }
         }
@@ -255,7 +256,7 @@ public class GameLogic {
         @Override public void onPhase1(Player self, Game game) {
             Card a = game.deck.popCard(), b = game.deck.popCard(), c = game.deck.popCard();
             self.drawCard(a, game); self.drawCard(b, game);
-            if (c != null) { game.deck.draw.add(0, c); game.addLog("(킷 칼슨) 카드 1장 덱 위 반환."); }
+            if (c != null) { game.deck.draw.add(0, c); game.addLog("(Kit Carlson) 1 card returned to top of deck."); }
         }
     }
 
@@ -296,11 +297,11 @@ public class GameLogic {
         public WeaponCard getWeapon() { return weapon; }
         public boolean isAlive()      { return hp > 0; }
 
-        public boolean hasMustang()   { for (Card c : field) if (c instanceof MustangCard)   return true; return false; }
-        public boolean hasAppaloosa() { for (Card c : field) if (c instanceof AppaloosaCard) return true; return false; }
+        public boolean hasMustang() { for (Card c : field) if (c instanceof MustangCard) return true; return false; }
+        public boolean hasScope()   { for (Card c : field) if (c instanceof ScopeCard)   return true; return false; }
 
         public void drawCard(Card c, Game game) {
-            if (c != null) { hand.add(c); game.addLog(" > " + name + " [" + c.name + "] 드로우"); }
+            if (c != null) hand.add(c);
         }
 
         public boolean respondToBang(Game game, Player attacker) {
@@ -310,13 +311,13 @@ public class GameLogic {
             for (Card c : field) {
                 if (c instanceof BarrelCard) {
                     Card check = game.drawCheckFor(this);
-                    if (check != null && check.suit == Suit.HEART) { game.addLog(name + " 술통 방어!"); return true; }
+                    if (check != null && check.suit == Suit.HEART) { game.addLog(name + " Barrel defense!"); return true; }
                 }
             }
             // Jourdonnais built-in barrel
             if (character instanceof Jourdonnais) {
                 Card check = game.drawCheckFor(this);
-                if (check != null && check.suit == Suit.HEART) { game.addLog(name + " (조르당네) 방어!"); return true; }
+                if (check != null && check.suit == Suit.HEART) { game.addLog(name + " (Jourdonnais) defense!"); return true; }
             }
 
             // Collect defence cards: Missed!, or Bang! for CalamityJanet
@@ -329,7 +330,7 @@ public class GameLogic {
             if (defIdx.size() >= required) {
                 defIdx.sort(Collections.reverseOrder());
                 for (int idx : defIdx) game.deck.discard(hand.remove(idx));
-                game.addLog(name + " [빗나감!]" + (required > 1 ? " x2" : "") + " 사용.");
+                game.addLog(name + " used [Missed!]" + (required > 1 ? " x2" : "") + ".");
                 return true;
             }
             return false;
@@ -372,6 +373,7 @@ public class GameLogic {
         public List<Card>   getGeneralStorePool() { return Collections.unmodifiableList(generalStorePool); }
         public int          getGeneralStorePickerIdx() { return generalStorePickerIdx; }
         public List<String> getLog() { return Collections.unmodifiableList(log); }
+        public Card         getTopDiscard() { return deck.discard.isEmpty() ? null : deck.discard.get(deck.discard.size() - 1); }
 
         public void addLog(String msg) { log.add(msg); if (log.size() > 100) log.remove(0); }
 
@@ -393,7 +395,9 @@ public class GameLogic {
                 p.hp        = p.maxHp;
                 for (int j = 0; j < p.hp; j++) { Card c = deck.popCard(); if (c != null) p.hand.add(c); }
             }
-            addLog("=== BANG! 게임 시작 ===");
+            for (int i = 0; i < players.size(); i++)
+                if (players.get(i).role == Role.SHERIFF) { currentPlayerIdx = i; break; }
+            addLog("=== BANG! Game Start ===");
             beginCurrentPlayerTurn();
         }
 
@@ -408,11 +412,11 @@ public class GameLogic {
         private void beginCurrentPlayerTurn() {
             Player p = getCurrentPlayer();
             if (p.hp <= 0) { advanceToNextPlayer(); return; }
-            addLog("▶ [" + p.name + "] " + p.character.name + "  HP:" + p.hp + "/" + p.maxHp + " | " + p.role);
+            addLog("[" + p.name + "] " + p.character.name + "  HP:" + p.hp + "/" + p.maxHp + " | " + p.role);
             p.hasPlayedBang = false;
             if (!handleFieldEffects(p)) { advanceToNextPlayer(); return; }
             p.character.onPhase1(p, this);
-            addLog(p.name + " 드로우 완료. 손패 " + p.hand.size() + "장");
+            addLog(p.name + " drew cards. Hand: " + p.hand.size());
             state = GameState.PLAY;
         }
 
@@ -426,7 +430,7 @@ public class GameLogic {
                 (p.character instanceof CalamityJanet && card instanceof MissedCard);
             boolean infiniteBang = p.character.canInfiniteBang() || (p.weapon instanceof VolcanicCard);
 
-            if (actingAsBang && p.hasPlayedBang && !infiniteBang) { addLog("뱅은 한 번만!"); return; }
+            if (actingAsBang && p.hasPlayedBang && !infiniteBang) { addLog("Bang! can only be used once per turn!"); return; }
 
             boolean needsTarget = actingAsBang || card instanceof PanicCard
                 || card instanceof CatBalouCard || card instanceof DuelCard || card instanceof JailCard;
@@ -439,10 +443,17 @@ public class GameLogic {
                     if (card instanceof PanicCard && getDist(p, t) > 1) continue;
                     targetCandidates.add(t);
                 }
-                if (targetCandidates.isEmpty()) { addLog("유효한 타겟 없음."); return; }
+                if (targetCandidates.isEmpty()) { addLog("No valid targets."); return; }
                 pendingCardIdx = cardIdx;
                 state = GameState.SELECT_TARGET;
             } else {
+                // Missed! is a reaction card — cannot be played actively (except by CalamityJanet as Bang!)
+                if (card instanceof MissedCard) { addLog("[!] Missed! is a reaction card."); return; }
+                // Beer is invalid when only 2 or fewer players remain
+                if (card instanceof BeerCard) {
+                    long alive = players.stream().filter(pl -> pl.hp > 0).count();
+                    if (alive <= 2) { addLog("[!] Beer: cannot use with 2 or fewer players alive."); return; }
+                }
                 p.hand.remove(cardIdx);
                 card.execute(p, null, this);
                 if (card.type == CardType.BROWN) deck.discard(card);
@@ -463,7 +474,7 @@ public class GameLogic {
             // CalamityJanet using Missed! as Bang!
             if (p.character instanceof CalamityJanet && card instanceof MissedCard) {
                 p.hasPlayedBang = true;
-                addLog("[!] " + p.name + " (Janet) -> " + target.name + " 뱅! (Missed 사용)");
+                addLog("[!] " + p.name + " (Janet) -> " + target.name + " Bang! (using Missed!)");
                 if (!target.respondToBang(this, p)) loseHP(target, p, 1);
             } else {
                 card.execute(p, target, this);
@@ -483,22 +494,28 @@ public class GameLogic {
             if (state != GameState.PLAY) return;
             Player p = getCurrentPlayer();
             int d = 0;
-            while (p.hand.size() > p.hp) { deck.discard(p.hand.remove(0)); d++; }
-            if (d > 0) addLog(p.name + " " + d + "장 버림.");
-            addLog("[" + p.name + "] 턴 종료.");
+            while (p.hand.size() > p.maxHp) { deck.discard(p.hand.remove(0)); d++; }
+            if (d > 0) addLog(p.name + " discarded " + d + " card(s).");
+            addLog("[" + p.name + "] End of turn.");
             advanceToNextPlayer();
         }
 
-        // Sid Ketchum: discard 2 for +1 HP (call anytime during PLAY)
-        public boolean sidKetchumHeal() {
-            if (state != GameState.PLAY) return false;
-            Player p = getCurrentPlayer();
-            if (!(p.character instanceof SidKetchum) || p.hand.size() < 2) {
-                addLog("시드 케첨 능력 사용 불가."); return false;
+        // Sid Ketchum: discard 2 cards for +1 HP — usable at ANY time, even outside own turn
+        public boolean sidKetchumHeal() { return sidKetchumHeal(getCurrentPlayer()); }
+
+        public boolean sidKetchumHeal(Player p) {
+            if (!(p.character instanceof SidKetchum)) {
+                addLog("Only Sid Ketchum can use this."); return false;
+            }
+            if (p.hand.size() < 2) {
+                addLog(p.name + " not enough cards."); return false;
+            }
+            if (p.hp >= p.maxHp) {
+                addLog(p.name + " already at max HP."); return false;
             }
             deck.discard(p.hand.remove(0)); deck.discard(p.hand.remove(0));
             getHP(p, 1);
-            addLog("(시드 케첨) 카드 2장 → HP+1");
+            addLog("(Sid Ketchum) " + p.name + " discards 2 cards -> HP+1");
             return true;
         }
 
@@ -511,7 +528,7 @@ public class GameLogic {
             while (players.get(generalStorePickerIdx).hp <= 0)
                 generalStorePickerIdx = (generalStorePickerIdx + 1) % players.size();
             state = GameState.GENERAL_STORE;
-            addLog(players.get(generalStorePickerIdx).name + " 먼저 선택!");
+            addLog(players.get(generalStorePickerIdx).name + " picks first!");
         }
 
         public void pickGeneralStoreCard(int poolIdx) {
@@ -520,11 +537,11 @@ public class GameLogic {
             Player picker = players.get(generalStorePickerIdx);
             Card chosen = generalStorePool.remove(poolIdx);
             picker.hand.add(chosen);
-            addLog(picker.name + " [" + chosen.name + "] 선택!");
-            if (generalStorePool.isEmpty()) { state = GameState.PLAY; addLog("잡화점 종료."); checkGameOver(); return; }
+            addLog(picker.name + " picked [" + chosen.name + "]!");
+            if (generalStorePool.isEmpty()) { state = GameState.PLAY; addLog("General Store ended."); checkGameOver(); return; }
             do { generalStorePickerIdx = (generalStorePickerIdx + 1) % players.size(); }
             while (players.get(generalStorePickerIdx).hp <= 0);
-            addLog(players.get(generalStorePickerIdx).name + " 차례.");
+            addLog(players.get(generalStorePickerIdx).name + "'s turn.");
         }
 
         private void advanceToNextPlayer() {
@@ -538,15 +555,15 @@ public class GameLogic {
                 Card c = it.next();
                 if (c instanceof JailCard) {
                     Card check = drawCheckFor(p); it.remove(); deck.discard(c);
-                    if (check == null || check.suit != Suit.HEART) { addLog(p.name + " 탈옥 실패!"); return false; }
-                    addLog(p.name + " 탈옥 성공!");
+                    if (check == null || check.suit != Suit.HEART) { addLog(p.name + " failed jail check!"); return false; }
+                    addLog(p.name + " escaped jail!");
                 } else if (c instanceof DynamiteCard) {
                     Card check = drawCheckFor(p);
                     if (check != null && check.suit == Suit.SPADE && check.value >= 2 && check.value <= 9) {
-                        addLog("다이너마이트 폭발! " + p.name + " -3HP");
+                        addLog("Dynamite explodes! " + p.name + " -3HP");
                         loseHP(p, null, 3); it.remove(); deck.discard(c);
                     } else {
-                        addLog("다이너마이트 다음 사람에게..");
+                        addLog("Dynamite passes to next player..");
                         it.remove(); players.get((players.indexOf(p) + 1) % players.size()).field.add(c);
                     }
                 }
@@ -564,11 +581,11 @@ public class GameLogic {
                 Card chosen = (suitRank(a) >= suitRank(b)) ? a : b;
                 Card other  = (chosen == a) ? b : a;
                 deck.discard(other);
-                if (chosen != null) addLog("[판정x2] " + chosen.name + " " + chosen.suit + " (럭키 듀크)");
+                if (chosen != null) addLog("[check x2] " + chosen.name + " " + chosen.suit + " (Lucky Duke)");
                 deck.discard(chosen); return chosen;
             }
             Card c = deck.popCard();
-            if (c != null) addLog("[판정] " + c.name + " " + c.suit + " " + c.value);
+            if (c != null) addLog("[check] " + c.name + " " + c.suit + " " + c.value);
             deck.discard(c); return c;
         }
 
@@ -584,7 +601,7 @@ public class GameLogic {
             if (n == 0) return 999;
             int base = Math.min(Math.abs(ai - ti), n - Math.abs(ai - ti));
             return base + t.character.getDistanceMod() + (t.hasMustang() ? 1 : 0)
-                       - a.character.getRangeMod() - (a.hasAppaloosa() ? 1 : 0);
+                       - a.character.getRangeMod() - (a.hasScope() ? 1 : 0);
         }
 
         public boolean canHit(Player a, Player t) {
@@ -593,25 +610,60 @@ public class GameLogic {
 
         public void getHP(Player p, int amt) {
             p.hp = Math.min(p.hp + amt, p.maxHp);
-            addLog(p.name + " 회복! HP:" + p.hp + "/" + p.maxHp);
+            addLog(p.name + " healed! HP:" + p.hp + "/" + p.maxHp);
         }
 
         public void loseHP(Player t, Player attacker, int amt) {
             t.hp -= amt;
-            addLog(t.name + " -" + amt + "HP! 현재:" + t.hp + "/" + t.maxHp);
+            addLog(t.name + " -" + amt + "HP! Current:" + t.hp + "/" + t.maxHp);
             t.character.onDamaged(t, attacker, this, amt); // BartCassidy draws here
             if (t.hp <= 0) {
-                addLog("[사망] " + t.name);
+                addLog("[DEAD] " + t.name);
+                // Outlaw eliminated: the killer draws 3 cards as reward
+                if (t.role == Role.OUTLAW && attacker != null) {
+                    addLog("[REWARD] " + attacker.name + " draws 3 bounty cards!");
+                    attacker.drawCard(deck.popCard(), this);
+                    attacker.drawCard(deck.popCard(), this);
+                    attacker.drawCard(deck.popCard(), this);
+                }
+                // Sheriff kills own Deputy: Sheriff discards all hand cards and equipment
+                if (t.role == Role.DEPUTY && attacker != null && attacker.role == Role.SHERIFF) {
+                    addLog("[PENALTY] Sheriff killed Deputy! All hand/equipment discarded!");
+                    new ArrayList<>(attacker.hand).forEach(deck::discard);
+                    attacker.hand.clear();
+                    if (attacker.weapon != null) { deck.discard(attacker.weapon); attacker.weapon = null; }
+                    new ArrayList<>(attacker.field).forEach(deck::discard);
+                    attacker.field.clear();
+                }
             }
         }
 
         private boolean checkGameOver() {
-            int outlaws = 0; boolean sheriff = false;
+            boolean sheriffAlive = false;
+            int aliveCount = 0;
+            Player lastAlive = null;
+            boolean anyEnemy = false;
+
             for (Player p : players) {
-                if (p.hp > 0) { if (p.role == Role.SHERIFF) sheriff = true; else outlaws++; }
+                if (p.hp > 0) {
+                    aliveCount++;
+                    lastAlive = p;
+                    if (p.role == Role.SHERIFF) sheriffAlive = true;
+                    else anyEnemy = true;
+                }
             }
-            if (!sheriff) { addLog("★ 악당 승리!"); state = GameState.GAME_OVER; return true; }
-            if (outlaws == 0) { addLog("★ 정의 구현!"); state = GameState.GAME_OVER; return true; }
+
+            if (!sheriffAlive) {
+                // Renegade wins only if they are the sole survivor and killed the Sheriff last
+                if (aliveCount == 1 && lastAlive != null && lastAlive.role == Role.RENEGADE) {
+                    addLog("★ Renegade wins!");
+                } else {
+                    addLog("★ Outlaws win!");
+                }
+                state = GameState.GAME_OVER;
+                return true;
+            }
+            if (!anyEnemy) { addLog("★ Justice prevails!"); state = GameState.GAME_OVER; return true; }
             return false;
         }
     }
@@ -645,11 +697,11 @@ public class GameLogic {
             for (int i = 0; i < 2;  i++) draw.add(new JailCard());
             for (int i = 0; i < 2;  i++) draw.add(new BarrelCard());
             for (int i = 0; i < 2;  i++) draw.add(new MustangCard());
-            draw.add(new AppaloosaCard());
+            draw.add(new ScopeCard());
             draw.add(new VolcanicCard());
             draw.add(new WeaponCard("Schofield",  2));
             draw.add(new WeaponCard("Remington",  3));
-            draw.add(new WeaponCard("Carabine",   4));
+            draw.add(new WeaponCard("Rev. Carabine", 4));
             draw.add(new WeaponCard("Winchester", 5));
             Collections.shuffle(draw);
         }

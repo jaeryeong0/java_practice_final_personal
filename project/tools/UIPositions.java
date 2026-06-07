@@ -9,7 +9,7 @@ public final class UIPositions {
     // 1. 내 보드 (화면 좌측)
     public static final class MyBoard {
         public static final TerminalPosition BOARD = new TerminalPosition(0, 0);
-        public static final TerminalPosition NICKNAME = new TerminalPosition(3, 0);
+        public static final TerminalPosition NICKNAME = new TerminalPosition(3, 1);
         // 배열로 선언하면 for문으로 1~5번 슬롯을 순회하며 그리기 십습니다.
         static int pos1 = 6;
         static int d = 15;
@@ -60,6 +60,9 @@ public final class UIPositions {
     public static final class TextArea {
         // 텍스트가 시작될 위치
         public static final TerminalPosition TEXT_START = new TerminalPosition(96, 18);
+        public static final TerminalPosition LOG = new TerminalPosition(96, 27);
+        public static final TerminalPosition CARD_INFO = new TerminalPosition(96, 19);
+        
     }
 
     // 4. 공용 카드 덱 구역 (화면 중앙 우측)
