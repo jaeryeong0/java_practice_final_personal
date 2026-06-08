@@ -33,10 +33,6 @@ public class WaitingRoomScene implements Scene {
     private static final int ROW_BTM_BAR    = 61;
     private static final int ROW_BTM_BORDER = 62;
 
-    // Placeholder ready-state array used only for local rendering tests; not wired to server logic
-    private boolean[] playerReady  = { true, true, false, true, false, false, false };
-    private int myIndex   = 2;
-
     private StringBuilder chatInput = new StringBuilder();
     private int           tickCount;
 
@@ -57,9 +53,7 @@ public class WaitingRoomScene implements Scene {
     public void handleInput(KeyStroke key) throws IOException {
         KeyType type = key.getKeyType();
         ClientGameState cs = client.getState();
-        if (type == KeyType.F1) {
-            playerReady[myIndex] = !playerReady[myIndex];
-        } else if (type == KeyType.F2 || type == KeyType.Escape) {
+        if (type == KeyType.F2 || type == KeyType.Escape) {
             boolean wasHost = cs.myPlayerIdx == 0;
             client.disconnect();
             SceneManager.getInstance().changeScene(new NicknameScene(wasHost));

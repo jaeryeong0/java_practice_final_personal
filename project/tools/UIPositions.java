@@ -91,8 +91,5 @@ public final class UIPositions {
         public static final TerminalPosition WEAPON_CARD = new TerminalPosition(152, 49);
         
         public static final TerminalPosition PASSIVE_CARDS = new TerminalPosition(180, 45);
-        
-        // Center anchor for pagination dots
-        public static final TerminalPosition PAGE_DOTS_CENTER = new TerminalPosition(182, 68); 
     }
 }

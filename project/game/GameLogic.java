@@ -24,10 +24,6 @@ public class GameLogic {
             this.name = name; this.suit = suit; this.value = value; this.type = type;
         }
         public abstract void execute(Player user, Player target, Game game);
-        public String getName() { return name; }
-        public Suit getSuit() { return suit; }
-        public int getValue() { return value; }
-        public CardType getCardType() { return type; }
     }
 
     public static class BangCard extends Card {
@@ -216,14 +212,10 @@ public class GameLogic {
             self.drawCard(game.deck.popCard(), game); self.drawCard(game.deck.popCard(), game);
         }
         public void onDamaged(Player self, Player attacker, Game game, int amount) {}
-        public void onKill(Player self, Player killed, Game game) {}
         public void onCardPlayed(Player self, Game game) {}
         public int getDistanceMod() { return 0; }
         public int getRangeMod()    { return 0; }
-        public boolean canInfiniteBang()    { return false; }
-        public boolean canUseMissedAsBang() { return false; }
-        public boolean canUseBangAsMissed() { return false; }
-        public String getName() { return name; }
+        public boolean canInfiniteBang() { return false; }
     }
 
     public static class BartCassidy extends CharDef {
@@ -249,8 +241,7 @@ public class GameLogic {
 
     public static class CalamityJanet extends CharDef {
         public CalamityJanet() { super("Calamity Janet", 4); }
-        @Override public boolean canUseMissedAsBang() { return true; }
-        @Override public boolean canUseBangAsMissed() { return true; }
+        // Ability: can use Missed! as Bang! and vice versa — enforced via instanceof checks in Game
     }
 
     public static class Jourdonnais extends CharDef {
@@ -294,15 +285,6 @@ public class GameLogic {
         public boolean hasPlayedBang = false;
 
         public Player(String name) { this.name = name; }
-        public String getName()       { return name; }
-        public int getHp()            { return hp; }
-        public int getMaxHp()         { return maxHp; }
-        public Role getRole()         { return role; }
-        public CharDef getCharacter() { return character; }
-        public List<Card> getHand()   { return hand; }
-        public List<Card> getField()  { return field; }
-        public WeaponCard getWeapon() { return weapon; }
-        public boolean isAlive()      { return hp > 0; }
 
         public boolean hasMustang() { for (Card c : field) if (c instanceof MustangCard) return true; return false; }
         public boolean hasScope()   { for (Card c : field) if (c instanceof ScopeCard)   return true; return false; }
@@ -652,8 +634,6 @@ public class GameLogic {
         }
 
         // Sid Ketchum: discard 2 cards for +1 HP — usable at ANY time, even outside own turn
-        public boolean sidKetchumHeal() { return sidKetchumHeal(getCurrentPlayer()); }
-
         public boolean sidKetchumHeal(Player p) {
             if (!(p.character instanceof SidKetchum)) {
                 addLog("Only Sid Ketchum can use this."); return false;
@@ -725,9 +705,6 @@ public class GameLogic {
             }
             return true;
         }
-
-        // Draw-check without a specific player context (e.g. for generic barrel resolution)
-        public Card drawCheck() { return drawCheckFor(null); }
 
         // Lucky Duke's ability: flip 2 cards and keep the one with higher suit rank (Heart > Diamond > Club > Spade).
         // Both cards are discarded after the check regardless.

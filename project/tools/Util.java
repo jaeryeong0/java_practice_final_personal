@@ -67,12 +67,6 @@ public class Util {
         return colorizeTextImage(asset, color);
     }
 
-    // colorize by RGB values
-    public static TextImage colorizeTextImage(TextImage asset, int r, int g, int b) {
-        TextColor color = new TextColor.RGB(r, g, b);
-        return colorizeTextImage(asset, color);
-    }
-
     // draw overlay centered on base; space chars in overlay are treated as transparent
     public static TextImage overlayCenter(TextImage base, TextImage overlay) {
         TerminalSize bs = base.getSize();
@@ -184,10 +178,7 @@ public class Util {
     }
 
     // Lays out an array of cards starting at startPos, fitting within maxWidth.
-    public static void placeCards(TextGraphics tg, TextImage[] cards, TerminalPosition startPos, int maxWidth) {
-        placeCards(tg, cards, startPos, maxWidth, -1);
-    }
-
+    // highlightIndex: card at this index is drawn last (on top) and shifted 1 row up. Use -1 for no highlight.
     public static void placeCards(TextGraphics tg, TextImage[] cards, TerminalPosition startPos, int maxWidth, int highlightIndex) {
         if (cards == null || cards.length == 0) {
             return;
