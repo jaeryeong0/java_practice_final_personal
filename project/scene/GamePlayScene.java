@@ -24,6 +24,8 @@ public class GamePlayScene implements Scene {
 
     // --- scene state ---
 
+    // Keyboard focus is split between the player's own board (left panel) and the target board (right panel).
+    // Tab cycles between them; arrow keys then navigate within the focused area.
     private enum FocusArea { MY_BOARD, TARGET_BOARD }
 
     private final BangClient client;
@@ -165,6 +167,8 @@ public class GamePlayScene implements Scene {
         return (target.handSize > 0 ? 1 : 0) + target.field.size() + (target.weapon != null ? 1 : 0);
     }
 
+    // My board has 3 rows: row 0 = role/character/weapon cards, row 1 = field (passive) cards, row 2 = hand cards.
+    // Pressing Up at row 0 or Down at row 2 transfers focus to the target board.
     private void handleMyBoardInput(KeyType arrowKey, ClientGameState cs) {
         PlayerSnap me = cs.myPlayer();
         if (arrowKey == KeyType.ArrowUp) {
@@ -648,6 +652,9 @@ public class GamePlayScene implements Scene {
         return imgs;
     }
 
+    // Build the visual card: weapon cards are selected by range, all others by name.
+    // Border color distinguishes BROWN (action) from BLUE (equipment) cards.
+    // Suit symbol + value are stamped at the bottom-left corner.
     private TextImage cardSnapImage(CardSnap c) {
         TextImage base = c.weaponRange > 0 ? handWeaponImage(c.weaponRange) : playCardImage(c.name);
         if ("BROWN".equals(c.type)) base = Util.colorizeBorder(base, new TextColor.RGB(139, 90, 43));

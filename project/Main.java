@@ -24,7 +24,7 @@ public class Main {
 
         try {
             // ----------------------------------------------------------------
-            // 1. Lanterna 터미널 및 스크린 초기화
+            // 1. Initialize Lanterna terminal and screen
             // ----------------------------------------------------------------
             DefaultTerminalFactory factory = new DefaultTerminalFactory();
             factory.setPreferTerminalEmulator(true);
@@ -50,19 +50,19 @@ public class Main {
             TextGraphics tg = screen.newTextGraphics();
 
             // ----------------------------------------------------------------
-            // 2. 첫 화면: 닉네임 입력
+            // 2. First screen: nickname input
             // ----------------------------------------------------------------
             SceneManager.getInstance().changeScene(new NicknameScene(true));
 
             // ----------------------------------------------------------------
-            // 3. 메인 게임 루프
+            // 3. Main game loop
             // ----------------------------------------------------------------
             while (true) {
                 KeyStroke key = screen.pollInput();
 
                 if (key != null) {
                     if (key.getKeyType() == KeyType.EOF) {
-                        // X버튼 = F2와 동일하게 처리 (disconnect 등 씬 정리)
+                        // X button treated the same as F2 (disconnect and clean up scene)
                         SceneManager.getInstance().handleInput(
                             new KeyStroke(KeyType.F2));
                         break;

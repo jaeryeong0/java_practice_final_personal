@@ -5,46 +5,46 @@ import com.googlecode.lanterna.input.KeyStroke;
 import java.io.IOException;
 
 /**
- * 게임의 화면(Scene) 전환과 렌더링, 입력을 총괄하는 매니저 클래스입니다.
- * 싱글톤(Singleton) 패턴을 적용하여 전역에서 접근할 수 있도록 설계되었습니다.
+ * Manager class that handles scene transitions, rendering, and input for the game.
+ * Designed as a singleton so it can be accessed globally.
  */
 public class SceneManager {
 
-    // 1. 싱글톤 인스턴스 생성
+    // 1. Singleton instance
     private static final SceneManager instance = new SceneManager();
     
-    // 현재 화면에 띄워져 있는 씬을 기억하는 변수 (다형성 활용)
+    // Tracks the currently active scene (uses polymorphism)
     private Scene currentScene;
 
-    // 외부에서 new SceneManager()를 할 수 없도록 생성자를 private으로 막음
+    // Private constructor to prevent external instantiation
     private SceneManager() {}
 
-    // 2. 전역 접근 메서드 (어디서든 SceneManager.getInstance()로 매니저를 부를 수 있음)
+    // 2. Global accessor (call SceneManager.getInstance() from anywhere)
     public static SceneManager getInstance() {
         return instance;
     }
 
     /**
-     * 화면을 새로운 씬으로 교체합니다.
-     * @param newScene 새로 전환할 씬 객체 (예: new TitleScene())
+     * Replaces the current screen with a new scene.
+     * @param newScene the scene to transition to (e.g. new TitleScene())
      */
     public void changeScene(Scene newScene) {
-        // 기존 씬이 존재한다면, 메모리 정리 등 종료 처리를 먼저 수행
+        // Clean up and exit the current scene first if one exists
         if (currentScene != null) {
             currentScene.exit();
         }
         
-        // 새로운 씬으로 교체
+        // Swap in the new scene
         currentScene = newScene;
         
-        // 새로운 씬의 초기화 작업 수행
+        // Initialize the new scene
         if (currentScene != null) {
             currentScene.enter();
         }
     }
 
     /**
-     * 메인 루프에서 들어온 키 입력을 현재 씬으로 전달합니다.
+     * Forwards key input from the main loop to the current scene.
      */
     public void handleInput(KeyStroke key) throws IOException {
         if (currentScene != null && key != null) {
@@ -53,7 +53,7 @@ public class SceneManager {
     }
 
     /**
-     * 메인 루프에서 화면을 그릴 때 현재 씬의 렌더링 로직을 실행합니다.
+     * Executes the current scene's rendering logic when the main loop draws the screen.
      */
     public void render(TextGraphics graphics) {
         if (currentScene != null) {
@@ -61,9 +61,9 @@ public class SceneManager {
         }
     }
 
-    /** 현재 씬 반환 (테스트 모드에서 씬 저장용). */
+    /** Returns the current scene (used for scene saving in test mode). */
     public Scene getCurrentScene() { return currentScene; }
 
-    /** 라이프사이클 호출 없이 씬 교체 (테스트 모드 플레이어 전환용). */
+    /** Replaces the scene without lifecycle calls (used for player switching in test mode). */
     public void forceScene(Scene s) { currentScene = s; }
 }

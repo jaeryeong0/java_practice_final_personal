@@ -19,6 +19,9 @@ public class TitleScene implements Scene {
     private static final int SCREEN_COLS = 270;
     private static final int SCREEN_ROWS = 70;
 
+    // MAIN_MENU: title screen with HOST/JOIN button
+    // PORT_INPUT: host types a port number to start the server on
+    // IP_INPUT:   client types "host:port" to connect to an existing server
     private enum State { MAIN_MENU, PORT_INPUT, IP_INPUT }
 
     // --- constructor params ---
@@ -85,6 +88,7 @@ public class TitleScene implements Scene {
                 Thread st = new Thread(() -> new BangServer(port, 7).start(), "bang-server");
                 st.setDaemon(true);
                 st.start();
+                // Brief sleep gives the ServerSocket time to bind before we connect as the host
                 Thread.sleep(200);
                 BangClient client = new BangClient();
                 client.connect("localhost", port, nickname);
@@ -111,11 +115,13 @@ public class TitleScene implements Scene {
                 String raw = ipInput.toString().trim();
                 String host;
                 int port;
+                // Parse "host:port" — lastIndexOf handles IPv6 addresses with colons in the host part
                 int colonIdx = raw.lastIndexOf(':');
                 if (colonIdx > 0) {
                     host = raw.substring(0, colonIdx);
                     port = Integer.parseInt(raw.substring(colonIdx + 1));
                 } else {
+                    // No port specified — fall back to default
                     host = raw;
                     port = 12345;
                 }

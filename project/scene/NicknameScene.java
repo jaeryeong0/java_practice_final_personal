@@ -76,7 +76,7 @@ public class NicknameScene implements Scene {
             Util.placeImage(tg, new TerminalPosition(popupCol + popupWidth - 1, popupRow + r), sideBar, "WHITE");
         }
 
-        // title, prompt, hint (Assets 에셋)
+        // title, prompt, hint (from Assets)
         int nicknameTitle = popupCol + (popupWidth - Assets.NICKNAME_TITLE.getSize().getColumns()) / 2;
         Util.placeImage(tg, new TerminalPosition(nicknameTitle, popupRow + 1), Assets.NICKNAME_TITLE, "YELLOW_BRIGHT");
 

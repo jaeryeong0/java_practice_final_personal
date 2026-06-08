@@ -153,11 +153,11 @@ public class Util {
         return newImage;
     }
 
-    // colorName의 기본값을 white로 하기 위함.
+    // Overload that defaults colorName to white.
     public static void placeImage(TextGraphics tg, TerminalPosition position, TextImage asset) {
         placeImage(tg, position, asset, "white");
     }
-    // 이미지 그릴 때 이 함수로 깔끔하게 적으려고 만듦
+    // Draws a colorized image at the given position; silently ignores draw errors.
     public static void placeImage(TextGraphics tg, TerminalPosition position, TextImage asset, String colorName) {
         try {
 
@@ -183,7 +183,7 @@ public class Util {
         }
     }
 
-    // 깔려 있는 카드, 내 손패를 배치하기 위한 함수
+    // Lays out an array of cards starting at startPos, fitting within maxWidth.
     public static void placeCards(TextGraphics tg, TextImage[] cards, TerminalPosition startPos, int maxWidth) {
         placeCards(tg, cards, startPos, maxWidth, -1);
     }

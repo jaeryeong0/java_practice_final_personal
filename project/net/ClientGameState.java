@@ -54,8 +54,8 @@ public class ClientGameState {
         public String name  = "";
         public String suit  = "";
         public int    value = 0;
-        public String type  = "";
-        public int    weaponRange = -1; // > 0 only for weapon cards
+        public String type  = ""; // "BROWN" (action) or "BLUE" (equipment)
+        public int    weaponRange = -1; // > 0 only for weapon cards; used to pick the correct gun image
     }
 
     public static class WeaponSnap {

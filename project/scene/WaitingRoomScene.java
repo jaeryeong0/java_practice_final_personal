@@ -33,7 +33,7 @@ public class WaitingRoomScene implements Scene {
     private static final int ROW_BTM_BAR    = 61;
     private static final int ROW_BTM_BORDER = 62;
 
-    // test data
+    // Placeholder ready-state array used only for local rendering tests; not wired to server logic
     private boolean[] playerReady  = { true, true, false, true, false, false, false };
     private int myIndex   = 2;
 
@@ -80,6 +80,7 @@ public class WaitingRoomScene implements Scene {
         ClientGameState cs = client.getState();
         String name = cs.myPlayerIdx < cs.lobbyNames.size() ? cs.lobbyNames.get(cs.myPlayerIdx) : "?";
         String msg = name + ": " + chatInput.toString();
+        // Manually escape backslash and double-quote so the message is valid inside the JSON string
         String escaped = msg.replace("\\", "\\\\").replace("\"", "\\\"");
         client.sendAction("{\"type\":\"CHAT\",\"msg\":\"" + escaped + "\"}");
         chatInput.setLength(0);
@@ -89,7 +90,8 @@ public class WaitingRoomScene implements Scene {
 
     @Override
     public void render(TextGraphics tg) {
-        // Auto-transition once the server moves past LOBBY
+        // Server pushes a non-LOBBY state update when the host starts the game;
+        // the render loop detects this and transitions the client to GamePlayScene automatically.
         ClientGameState cs = client.getState();
         if (!cs.isLobby()) {
             SceneManager.getInstance().changeScene(new GamePlayScene(client));

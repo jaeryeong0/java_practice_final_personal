@@ -23,11 +23,13 @@ public class BangServer {
     private final int  port;
     private final int  maxPlayers;
 
+    // All game state mutations happen inside this lock (called from multiple client threads)
     private final Object gameLock = new Object();
+    // CopyOnWriteArrayList lets broadcast loops iterate safely while handlers connect/disconnect
     private final List<ClientHandler> handlers   = new CopyOnWriteArrayList<>();
     private final List<String>        lobbyNames = new ArrayList<>();
     private final List<String>        lobbyChat  = new ArrayList<>();
-    private Game game = null;
+    private Game game = null; // null until host sends START_GAME
 
     public BangServer(int port, int maxPlayers) {
         this.port       = port;
@@ -166,6 +168,8 @@ public class BangServer {
         handlers.remove(h);
         synchronized (gameLock) {
             int leavingIdx = h.playerIdx;
+            // Mid-game disconnects are ignored to keep game state consistent.
+            // Lobby departures compact the name list and shift indices for all later handlers.
             if (leavingIdx >= 0 && game == null && leavingIdx < lobbyNames.size()) {
                 lobbyNames.remove(leavingIdx);
                 for (ClientHandler other : handlers) {

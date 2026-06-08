@@ -59,7 +59,7 @@ public class ClientMain {
                 KeyStroke key = screen.pollInput();
                 if (key != null) {
                     if (key.getKeyType() == KeyType.EOF) {
-                        // X버튼 = F2와 동일하게 처리 (disconnect 등 씬 정리)
+                        // X button treated the same as F2 (disconnect and clean up scene)
                         SceneManager.getInstance().handleInput(
                             new KeyStroke(KeyType.F2));
                         break;

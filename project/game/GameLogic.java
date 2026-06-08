@@ -12,6 +12,12 @@ public class GameLogic {
     // ==========================================
     // [2] Cards — Brown (action)
     // ==========================================
+
+    /**
+     * Base class for all cards. Subclasses implement execute() with the card's effect.
+     * BROWN cards are discarded after use; BLUE cards stay in the player's field (equipment).
+     * target may be null for area-effect or self-targeting cards.
+     */
     public static abstract class Card {
         public String name; public Suit suit; public int value; public CardType type;
         public Card(String name, Suit suit, int value, CardType type) {
@@ -28,8 +34,9 @@ public class GameLogic {
         public BangCard() { super("Bang!", Suit.SPADE, 1, CardType.BROWN); }
         @Override public void execute(Player user, Player target, Game game) {
             if (target == null) return;
-            user.hasPlayedBang = true;
+            user.hasPlayedBang = true; // blocks second Bang! unless Volcanic/WillyTheKid
             game.addLog("[!] " + user.name + " -> " + target.name + " Bang!");
+            // respondToBang runs the full defense chain (barrel check → Missed!)
             if (!target.respondToBang(game, user)) game.loseHP(target, user, 1);
         }
     }
@@ -114,7 +121,9 @@ public class GameLogic {
         public PanicCard() { super("Panic!", Suit.HEART, 8, CardType.BROWN); }
         @Override public void execute(Player user, Player target, Game game) {
             if (target == null) return;
-            // Can steal from hand, field, or weapon
+            // Build steal pool: hand cards + field cards + equipped weapon.
+            // The card to steal is chosen randomly from the whole pool,
+            // then we determine which bucket it came from to remove it correctly.
             List<Card> pool = new ArrayList<>(target.hand);
             pool.addAll(target.field);
             if (target.weapon != null) pool.add(target.weapon);
@@ -192,6 +201,14 @@ public class GameLogic {
     // ==========================================
     // [3] Characters
     // ==========================================
+
+    /**
+     * Abstract character definition. Subclasses override only the hooks they need.
+     * Default onPhase1 draws 2 cards; all other hooks are no-ops.
+     *
+     * Distance/range modifiers: getDistanceMod() adds to how far away this player APPEARS
+     * to opponents (defensive); getRangeMod() extends how far this player can SHOOT (offensive).
+     */
     public static abstract class CharDef {
         public String name; public int hp;
         public CharDef(String name, int hp) { this.name = name; this.hp = hp; }
@@ -294,8 +311,16 @@ public class GameLogic {
             if (c != null) hand.add(c);
         }
 
+        /**
+         * Attempts to defend against an incoming Bang! (or Gatling hit).
+         * Defense resolution order:
+         *   1. Each Barrel in field: draw-check — Heart cancels the Bang!
+         *   2. Jourdonnais built-in barrel (same draw-check logic)
+         *   3. Discard Missed! from hand (CalamityJanet may use Bang! instead)
+         * Returns true if the shot was successfully blocked.
+         */
         public boolean respondToBang(Game game, Player attacker) {
-            int required = 1;
+            int required = 1; // always 1 Missed! per Bang! in standard rules
 
             // Barrel(s) in field
             for (Card c : field) {
@@ -326,7 +351,8 @@ public class GameLogic {
             return false;
         }
 
-        // Discard a Bang! (or Missed! for CalamityJanet) for Duel / Indians
+        // Used by Duel and Indians!: discard a Bang! to avoid taking damage.
+        // CalamityJanet may discard Missed! in its place (her special ability).
         public boolean discardForBang(Game game) {
             for (int i = 0; i < hand.size(); i++) {
                 Card c = hand.get(i);
@@ -341,6 +367,19 @@ public class GameLogic {
     // ==========================================
     // [5] Game engine
     // ==========================================
+
+    /**
+     * Core game engine. Holds all mutable game state and exposes action methods
+     * that BangServer calls inside its gameLock.
+     *
+     * Turn flow:
+     *   beginCurrentPlayerTurn()
+     *     → handleFieldEffects()   (Jail check, Dynamite explosion)
+     *     → character.onPhase1()   (draw cards — varies by character)
+     *     → state = PLAY
+     *   tryPlayCard() / endTurn()  (player actions)
+     *   advanceToNextPlayer()      (skip dead players, loop back to Sheriff)
+     */
     public static class Game {
         public List<Player> players;
         public Deck deck = new Deck();
@@ -389,16 +428,24 @@ public class GameLogic {
                 Player p = players.get(i);
                 p.role      = roles.get(i);
                 p.character = charPool.get(i);
+                // Sheriff gets +1 max HP as compensation for being the known target
                 p.maxHp     = p.character.hp + (p.role == Role.SHERIFF ? 1 : 0);
                 p.hp        = p.maxHp;
+                // Each player starts with cards equal to their HP
                 for (int j = 0; j < p.hp; j++) { Card c = deck.popCard(); if (c != null) p.hand.add(c); }
             }
+            // First turn always belongs to the Sheriff
             for (int i = 0; i < players.size(); i++)
                 if (players.get(i).role == Role.SHERIFF) { currentPlayerIdx = i; break; }
             addLog("=== BANG! Game Start ===");
             beginCurrentPlayerTurn();
         }
 
+        // Role counts by player count (official BANG! rules):
+        //   4p: 1 Sheriff, 2 Outlaws, 1 Renegade
+        //   5p: + 1 Deputy
+        //   6p: + 1 Outlaw (3 Outlaws total)
+        //   7p: + 1 Deputy (2 Deputies total)
         private List<Role> buildRoles(int n) {
             List<Role> r = new ArrayList<>(Arrays.asList(Role.SHERIFF, Role.OUTLAW, Role.OUTLAW, Role.RENEGADE));
             if (n >= 5) r.add(Role.DEPUTY);
@@ -424,8 +471,10 @@ public class GameLogic {
             if (cardIdx < 0 || cardIdx >= p.hand.size()) return;
             Card card = p.hand.get(cardIdx);
 
+            // CalamityJanet can play Missed! as Bang!, so both cases count toward the one-per-turn limit
             boolean actingAsBang = card instanceof BangCard ||
                 (p.character instanceof CalamityJanet && card instanceof MissedCard);
+            // Volcanic and Willy the Kid both bypass the one-Bang!-per-turn rule
             boolean infiniteBang = p.character.canInfiniteBang() || (p.weapon instanceof VolcanicCard);
 
             if (actingAsBang && p.hasPlayedBang && !infiniteBang) { addLog("Bang! can only be used once per turn!"); return; }
@@ -580,6 +629,7 @@ public class GameLogic {
         public void endTurn() {
             if (state != GameState.PLAY) return;
             Player p = getCurrentPlayer();
+            // Discard down to max hand size (= current max HP per BANG! rules)
             int d = 0;
             while (p.hand.size() > p.maxHp) { deck.discard(p.hand.remove(0)); d++; }
             if (d > 0) addLog(p.name + " discarded " + d + " card(s).");
@@ -676,10 +726,11 @@ public class GameLogic {
             return true;
         }
 
-        // Normal draw check
+        // Draw-check without a specific player context (e.g. for generic barrel resolution)
         public Card drawCheck() { return drawCheckFor(null); }
 
-        // LuckyDuke flips 2 and picks the better one
+        // Lucky Duke's ability: flip 2 cards and keep the one with higher suit rank (Heart > Diamond > Club > Spade).
+        // Both cards are discarded after the check regardless.
         public Card drawCheckFor(Player p) {
             if (p != null && p.character instanceof LuckyDuke) {
                 Card a = deck.popCard(), b = deck.popCard();
@@ -699,6 +750,15 @@ public class GameLogic {
             switch (c.suit) { case HEART: return 4; case DIAMOND: return 3; case CLUB: return 2; default: return 1; }
         }
 
+        /**
+         * Calculates the effective shooting distance from a to t.
+         * Base distance = shortest path around the circle of alive players.
+         * Modifiers applied on top:
+         *   +1 if target has Mustang equipped (harder to reach)
+         *   +target.character.getDistanceMod() (character ability)
+         *   -1 if attacker has Scope equipped (longer sight)
+         *   -attacker.character.getRangeMod() (character ability)
+         */
         public int getDist(Player a, Player t) {
             List<Player> alive = new ArrayList<>();
             for (Player p : players) if (p.hp > 0) alive.add(p);
@@ -709,6 +769,7 @@ public class GameLogic {
                        - a.character.getRangeMod() - (a.hasScope() ? 1 : 0);
         }
 
+        // Returns true if a can shoot t with their current weapon (default Colt .45 = range 1)
         public boolean canHit(Player a, Player t) {
             return getDist(a, t) <= (a.weapon == null ? 1 : a.weapon.range);
         }
@@ -721,17 +782,20 @@ public class GameLogic {
         public void loseHP(Player t, Player attacker, int amt) {
             t.hp -= amt;
             addLog(t.name + " -" + amt + "HP! Current:" + t.hp + "/" + t.maxHp);
+            // Bart Cassidy draws cards here, before beer rescue is attempted
             t.character.onDamaged(t, attacker, this, amt);
             if (tryBeerRescue(t)) return; // saved by Beer — treat as if death never happened
             if (t.hp > 0) return;         // took damage but still alive
             // --- death ---
             addLog("[DEAD] " + t.name);
+            // Bounty rule: killing an Outlaw rewards the attacker with 3 cards
             if (t.role == Role.OUTLAW && attacker != null) {
                 addLog("[REWARD] " + attacker.name + " draws 3 bounty cards!");
                 attacker.drawCard(deck.popCard(), this);
                 attacker.drawCard(deck.popCard(), this);
                 attacker.drawCard(deck.popCard(), this);
             }
+            // Penalty rule: if the Sheriff kills their own Deputy, they lose all cards immediately
             if (t.role == Role.DEPUTY && attacker != null && attacker.role == Role.SHERIFF) {
                 addLog("[PENALTY] Sheriff killed Deputy! All hand/equipment discarded!");
                 new ArrayList<>(attacker.hand).forEach(deck::discard);
@@ -742,9 +806,10 @@ public class GameLogic {
             }
         }
 
-        // Beer rescue: auto-use Beer when hp reaches exactly 0.
-        // hp == 0 guarantees 1 Beer restores to 1 HP (covers Dynamite only when pre-damage hp was 3).
-        // Beer has no effect when only 2 or fewer players remain.
+        // Auto-use the first Beer in hand when the player would reach exactly 0 HP.
+        // Only triggers at hp == 0 so one Beer always restores to 1 HP (not partial rescues).
+        // Beer is forbidden as a last-resort when only 2 or fewer players are still alive
+        // (standard rule: Beer has no effect in a 2-player endgame).
         private boolean tryBeerRescue(Player t) {
             if (t.hp != 0) return false;
             long otherAlive = players.stream().filter(pl -> pl.hp > 0).count();
@@ -760,6 +825,12 @@ public class GameLogic {
             return false;
         }
 
+        /**
+         * Win conditions (checked after every HP change and card play):
+         *   - Sheriff dead + Renegade is sole survivor → Renegade wins
+         *   - Sheriff dead + anyone else alive           → Outlaws win
+         *   - Sheriff alive + no enemies remaining       → Justice prevails (Sheriff + Deputies win)
+         */
         private boolean checkGameOver() {
             boolean sheriffAlive = false;
             int aliveCount = 0;
@@ -796,6 +867,7 @@ public class GameLogic {
     public static class Deck {
         public List<Card> draw = new ArrayList<>(), discard = new ArrayList<>();
 
+        // Auto-reshuffles the discard pile into a new draw pile when the deck runs out
         public Card popCard() {
             if (draw.isEmpty()) { draw.addAll(discard); discard.clear(); Collections.shuffle(draw); }
             return draw.isEmpty() ? null : draw.remove(draw.size() - 1);
