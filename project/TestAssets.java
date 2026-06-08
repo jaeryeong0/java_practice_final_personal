@@ -52,8 +52,8 @@ public class TestAssets {
         Util.placeImage(tg, new TerminalPosition(x, y), Assets.MUSTANG);
         x += Assets.MUSTANG.getSize().getColumns() + gap;
 
-        Util.placeImage(tg, new TerminalPosition(x, y), Assets.APPALOOSA);
-        x += Assets.APPALOOSA.getSize().getColumns() + gap;
+        Util.placeImage(tg, new TerminalPosition(x, y), Assets.SCOPE);
+        x += Assets.SCOPE.getSize().getColumns() + gap;
 
         Util.placeImage(tg, new TerminalPosition(x, y), Assets.JAIL);
         x += Assets.JAIL.getSize().getColumns() + gap;

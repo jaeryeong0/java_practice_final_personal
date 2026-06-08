@@ -82,7 +82,9 @@ public class TitleScene implements Scene {
         } else if (key.getKeyType() == KeyType.Enter) {
             try {
                 int port = portInput.length() > 0 ? Integer.parseInt(portInput.toString().trim()) : 12345;
-                new Thread(() -> new BangServer(port, 7).start(), "bang-server").start();
+                Thread st = new Thread(() -> new BangServer(port, 7).start(), "bang-server");
+                st.setDaemon(true);
+                st.start();
                 Thread.sleep(200);
                 BangClient client = new BangClient();
                 client.connect("localhost", port, nickname);

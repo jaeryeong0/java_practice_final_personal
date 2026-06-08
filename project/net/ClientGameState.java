@@ -11,7 +11,8 @@ public class ClientGameState {
     public String  gameState        = "LOBBY";
     public int     currentPlayerIdx = 0;
     public int     myPlayerIdx      = 0;
-    public int     storePickerIdx   = 0;
+    public int     storePickerIdx     = 0;
+    public int     catBalouTargetIdx  = -1;
 
     public final List<PlayerSnap> players   = new ArrayList<>();
     public final List<TargetSnap> targets   = new ArrayList<>();

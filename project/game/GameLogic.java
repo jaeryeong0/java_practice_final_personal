@@ -7,7 +7,7 @@ public class GameLogic {
     public enum Role { SHERIFF, DEPUTY, OUTLAW, RENEGADE }
     public enum Suit { SPADE, HEART, DIAMOND, CLUB }
     public enum CardType { BLUE, BROWN }
-    public enum GameState { INIT, PLAY, SELECT_TARGET, GENERAL_STORE, GAME_OVER }
+    public enum GameState { INIT, PLAY, SELECT_TARGET, SELECT_CAT_BALOU, GENERAL_STORE, GAME_OVER }
 
     // ==========================================
     // [2] Cards — Brown (action)
@@ -131,17 +131,7 @@ public class GameLogic {
     public static class CatBalouCard extends Card {
         public CatBalouCard() { super("Cat Balou", Suit.DIAMOND, 9, CardType.BROWN); }
         @Override public void execute(Player user, Player target, Game game) {
-            if (target == null) return;
-            List<Card> pool = new ArrayList<>(target.hand);
-            pool.addAll(target.field);
-            if (target.weapon != null) pool.add(target.weapon);
-            if (pool.isEmpty()) { game.addLog(target.name + " has no cards."); return; }
-            Card c = pool.get(new Random().nextInt(pool.size()));
-            if (target.hand.remove(c)) {}
-            else if (target.field.remove(c)) {}
-            else if (c == target.weapon) target.weapon = null;
-            game.deck.discard(c);
-            game.addLog("[" + c.name + "] discarded from " + target.name + ".");
+            // Execution is handled by Game.confirmCatBalou() after sub-selection.
         }
     }
 
@@ -364,6 +354,13 @@ public class GameLogic {
         private final List<Card> generalStorePool = new ArrayList<>();
         private int generalStorePickerIdx = 0;
 
+        // Cat Balou sub-selection state
+        private int        catBalouTargetIdx    = -1;
+        private int        catBalouHandSize     = 0;
+        private List<Card> catBalouFieldChoices = new ArrayList<>();
+        private boolean    catBalouHasWeapon    = false;
+        private Card       catBalouCard         = null;
+
         public Game(List<Player> players) { this.players = players; deck.initDeck(); }
 
         public GameState getState()    { return state; }
@@ -372,6 +369,7 @@ public class GameLogic {
         public List<Player> getTargetCandidates() { return Collections.unmodifiableList(targetCandidates); }
         public List<Card>   getGeneralStorePool() { return Collections.unmodifiableList(generalStorePool); }
         public int          getGeneralStorePickerIdx() { return generalStorePickerIdx; }
+        public int          getCatBalouTargetIdx() { return catBalouTargetIdx; }
         public List<String> getLog() { return Collections.unmodifiableList(log); }
         public Card         getTopDiscard() { return deck.discard.isEmpty() ? null : deck.discard.get(deck.discard.size() - 1); }
 
@@ -469,6 +467,31 @@ public class GameLogic {
             Player target = targetCandidates.get(targetIdx);
             Card card     = p.hand.remove(pendingCardIdx);
             pendingCardIdx = -1;
+            targetCandidates.clear();
+
+            // Cat Balou: enter discard-area sub-selection instead of executing immediately
+            if (card instanceof CatBalouCard) {
+                int handSz  = target.hand.size();
+                int fieldSz = target.field.size();
+                boolean hasWpn = target.weapon != null;
+                if (handSz + fieldSz + (hasWpn ? 1 : 0) == 0) {
+                    addLog("[Cat Balou] " + target.name + " has no cards!");
+                    deck.discard(card);
+                    state = GameState.PLAY;
+                    p.character.onCardPlayed(p, this);
+                    checkGameOver();
+                } else {
+                    catBalouTargetIdx    = players.indexOf(target);
+                    catBalouHandSize     = handSz;
+                    catBalouFieldChoices = new ArrayList<>(target.field);
+                    catBalouHasWeapon    = hasWpn;
+                    catBalouCard         = card;
+                    state = GameState.SELECT_CAT_BALOU;
+                    addLog("[Cat Balou] " + p.name + " vs " + target.name + ": pick what to discard.");
+                }
+                return;
+            }
+
             state = GameState.PLAY;
 
             // CalamityJanet using Missed! as Bang!
@@ -480,7 +503,6 @@ public class GameLogic {
                 card.execute(p, target, this);
             }
             if (card.type == CardType.BROWN) deck.discard(card);
-            targetCandidates.clear();
             p.character.onCardPlayed(p, this);
             checkGameOver();
         }
@@ -488,6 +510,71 @@ public class GameLogic {
         public void cancelTarget() {
             if (state != GameState.SELECT_TARGET) return;
             pendingCardIdx = -1; targetCandidates.clear(); state = GameState.PLAY;
+        }
+
+        /**
+         * Resolves Cat Balou after the user picks which area to discard from.
+         * choiceIdx mapping (same on client and server):
+         *   0              = Hand (random)       — only if handSize > 0
+         *   1..fieldSize   = field card by index — shifted by 1 if hand was available
+         *   last           = Weapon              — only if weapon exists
+         */
+        public void confirmCatBalou(int choiceIdx) {
+            if (state != GameState.SELECT_CAT_BALOU) return;
+            if (catBalouTargetIdx < 0 || catBalouTargetIdx >= players.size()) return;
+            Player target = players.get(catBalouTargetIdx);
+
+            int i = choiceIdx;
+
+            // Hand slot
+            if (catBalouHandSize > 0) {
+                if (i == 0) {
+                    if (!target.hand.isEmpty()) {
+                        Card c = target.hand.remove(new Random().nextInt(target.hand.size()));
+                        deck.discard(c);
+                        addLog("[Cat Balou] Discarded " + c.name + " from " + target.name + "'s hand (random).");
+                    }
+                    finalizeCatBalou();
+                    return;
+                }
+                i--;
+            }
+
+            // Field card slots
+            if (i < catBalouFieldChoices.size()) {
+                Card chosen = catBalouFieldChoices.get(i);
+                if (target.field.remove(chosen)) {
+                    deck.discard(chosen);
+                    addLog("[Cat Balou] Discarded " + chosen.name + " from " + target.name + "'s field.");
+                }
+                finalizeCatBalou();
+                return;
+            }
+            i -= catBalouFieldChoices.size();
+
+            // Weapon slot
+            if (catBalouHasWeapon && i == 0 && target.weapon != null) {
+                deck.discard(target.weapon);
+                addLog("[Cat Balou] Discarded " + target.weapon.name + " (weapon) from " + target.name + ".");
+                target.weapon = null;
+                finalizeCatBalou();
+                return;
+            }
+
+            addLog("[Cat Balou] Invalid choice (" + choiceIdx + "), discarding nothing.");
+            finalizeCatBalou();
+        }
+
+        private void finalizeCatBalou() {
+            deck.discard(catBalouCard);
+            catBalouCard      = null;
+            catBalouTargetIdx = -1;
+            catBalouHandSize  = 0;
+            catBalouFieldChoices.clear();
+            catBalouHasWeapon = false;
+            state = GameState.PLAY;
+            getCurrentPlayer().character.onCardPlayed(getCurrentPlayer(), this);
+            checkGameOver();
         }
 
         public void endTurn() {

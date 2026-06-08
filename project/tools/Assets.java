@@ -626,9 +626,9 @@ public class Assets {
         "│                             │",
         "└─────────────────────────────┘"
     };
-    private static final String[] APPALOOSA_STRING = {
+    private static final String[] SCOPE_STRING = {
         "┌─────────────────────────────┐",
-        "│          Appaloosa          │",
+        "│            Scope            │",
         "│                             │",
         "│                             │",
         "│        ___                  │",
@@ -898,6 +898,9 @@ public class Assets {
     public static final TextImage POPUP_TITLE;
     public static final TextImage POPUP_PROMPT;
     public static final TextImage POPUP_HINT;
+    public static final TextImage NICKNAME_TITLE;
+    public static final TextImage NICKNAME_PROMPT;
+    public static final TextImage NICKNAME_HINT;
 
     public static final TextImage HAND_GUN1;
     public static final TextImage HAND_GUN2;
@@ -922,7 +925,7 @@ public class Assets {
     // Blue Equipment Cards
     public static final TextImage BARREL;
     public static final TextImage MUSTANG;
-    public static final TextImage APPALOOSA;
+    public static final TextImage SCOPE;
     public static final TextImage JAIL;
     public static final TextImage DYNAMITE;
 
@@ -973,7 +976,7 @@ public class Assets {
 
         BARREL    = Util.createTextImage(BARREL_STRING);
         MUSTANG   = Util.createTextImage(MUSTANG_STRING);
-        APPALOOSA = Util.createTextImage(APPALOOSA_STRING);
+        SCOPE = Util.createTextImage(SCOPE_STRING);
         JAIL      = Util.createTextImage(JAIL_STRING);
         DYNAMITE  = Util.createTextImage(DYNAMITE_STRING);
 
@@ -993,6 +996,10 @@ public class Assets {
         POPUP_TITLE  = Util.createTextImage(new String[]{ "Join Server" });
         POPUP_PROMPT = Util.createTextImage(new String[]{ "Enter server IP address:" });
         POPUP_HINT   = Util.createTextImage(new String[]{ "Enter to connect  |  Esc to cancel" });
+
+        NICKNAME_TITLE  = Util.createTextImage(new String[]{ "Enter Nickname" });
+        NICKNAME_PROMPT = Util.createTextImage(new String[]{ "Your name:" });
+        NICKNAME_HINT   = Util.createTextImage(new String[]{ "Enter to confirm  (max 20 chars)" });
 
         WILLY_THE_KID  = Util.createTextImage(WILLY_THE_KID_STRING);
         CALAMITY_JANET = Util.createTextImage(CALAMITY_JANET_STRING);

@@ -63,12 +63,12 @@ public class WaitingRoomScene implements Scene {
             boolean wasHost = cs.myPlayerIdx == 0;
             client.disconnect();
             SceneManager.getInstance().changeScene(new NicknameScene(wasHost));
-        } else if (type == KeyType.Enter) {
+        } else if (type == KeyType.F5) {
             if (cs.myPlayerIdx == 0 && cs.lobbyNames.size() >= 4) {
                 client.sendAction("{\"type\":\"START_GAME\"}");
-            } else if (chatInput.length() > 0) {
-                sendChat();
             }
+        } else if (type == KeyType.Enter) {
+            if (chatInput.length() > 0) sendChat();
         } else if (type == KeyType.Backspace) {
             if (chatInput.length() > 0) chatInput.deleteCharAt(chatInput.length() - 1);
         } else if (type == KeyType.Character) {
@@ -210,10 +210,10 @@ public class WaitingRoomScene implements Scene {
         if (cs.myPlayerIdx == 0) {
             int count = cs.lobbyNames.size();
             bar = count >= 4
-                ? "[F2] Leave      [ENTER] Start Game (" + count + " players)"
-                : "[F2] Leave      Waiting for players... (" + count + "/4 minimum)";
+                ? "[F2] Leave      [F5] Start Game      [ENTER] Chat"
+                : "[F2] Leave      Waiting for players... (" + count + "/4 minimum)      [ENTER] Chat";
         } else {
-            bar = "[F2] Leave      [ENTER] Send Chat";
+            bar = "[F2] Leave      [ENTER] Chat";
         }
         tg.putString((COLS - bar.length()) / 2, ROW_BTM_BAR, bar);
     }

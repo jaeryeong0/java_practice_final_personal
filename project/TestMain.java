@@ -9,54 +9,47 @@ import com.googlecode.lanterna.terminal.DefaultTerminalFactory;
 import com.googlecode.lanterna.terminal.Terminal;
 import com.googlecode.lanterna.terminal.swing.SwingTerminalFontConfiguration;
 
-import net.BangClient;
-import net.BangServer;
+import scene.NicknameScene;
 import scene.Scene;
 import scene.SceneManager;
-import scene.WaitingRoomScene;
 
 import java.awt.Font;
 import java.io.IOException;
 
 /**
- * 테스트 모드 진입점.
- * 하나의 창에서 N명의 플레이어 뷰를 실행하며, [ / ] 키로 전환합니다.
+ * Single-window test launcher.
  *
- * 실행:  java TestMain P1 P2 P3 P4  (4~7명)
+ * Mirrors running one Main (host) + (N-1) ClientMain (client) windows,
+ * but inside one Swing terminal. Use [ / ] to switch between player views.
+ *
+ * Player 0 = HOST  (NicknameScene -> TitleScene -> starts server, joins)
+ * Player 1..N-1 = CLIENT  (NicknameScene -> TitleScene -> connects to host)
+ *
+ * Usage:  java TestMain <playerCount>   e.g.  java TestMain 4
  */
 public class TestMain {
 
     private static final int SCREEN_COL = 270;
     private static final int SCREEN_ROW = 70;
-    private static final int TEST_PORT  = 19999;
 
     public static void main(String[] args) throws Exception {
 
-        // ── 1. 플레이어 이름 결정 ─────────────────────────────────────────
-        int n = (args.length >= 4 && args.length <= 7) ? args.length : 4;
-        String[] names = new String[n];
-        for (int i = 0; i < n; i++) {
-            names[i] = (i < args.length) ? args[i] : "P" + (i + 1);
+        // ── 1. Player count ───────────────────────────────────────────────
+        int n = 4;
+        if (args.length > 0) {
+            try { n = Integer.parseInt(args[0]); } catch (NumberFormatException ignored) {}
         }
+        n = Math.max(4, Math.min(7, n));
 
-        // ── 2. 내장 서버 시작 ─────────────────────────────────────────────
-        Thread serverThread = new Thread(() -> new BangServer(TEST_PORT, n).start(), "test-server");
-        serverThread.setDaemon(true);
-        serverThread.start();
-        Thread.sleep(300);
-
-        // ── 3. 클라이언트 연결 및 씬 생성 ────────────────────────────────
-        BangClient[] clients = new BangClient[n];
-        Scene[]      scenes  = new Scene[n];
+        // ── 2. Create one NicknameScene per player (no pre-connections) ───
+        //       Player 0 is the host; the rest are clients.
+        Scene[] scenes = new Scene[n];
         for (int i = 0; i < n; i++) {
-            clients[i] = new BangClient();
-            clients[i].connect("localhost", TEST_PORT, names[i]);
-            scenes[i]  = new WaitingRoomScene(clients[i]);
+            scenes[i] = new NicknameScene(i == 0);
             scenes[i].enter();
-            Thread.sleep(80); // JOIN 패킷 순서 보장
         }
 
-        // ── 4. Lanterna 창 생성 ───────────────────────────────────────────
+        // ── 3. Lanterna window ────────────────────────────────────────────
         DefaultTerminalFactory factory = new DefaultTerminalFactory();
         factory.setPreferTerminalEmulator(true);
         factory.setTerminalEmulatorFontConfiguration(
@@ -73,12 +66,12 @@ public class TestMain {
         screen.setCursorPosition(null);
         TextGraphics tg = screen.newTextGraphics();
 
-        // ── 5. 첫 번째 플레이어 뷰 활성화 ────────────────────────────────
+        // ── 4. Activate player 0's view ───────────────────────────────────
         int active = 0;
         SceneManager.getInstance().forceScene(scenes[active]);
-        updateTitle(frame, names, active, n);
+        updateTitle(frame, active, n);
 
-        // ── 6. 메인 루프 ─────────────────────────────────────────────────
+        // ── 5. Main loop ──────────────────────────────────────────────────
         try {
             while (true) {
                 KeyStroke key = screen.pollInput();
@@ -89,47 +82,49 @@ public class TestMain {
                     char ch = (key.getKeyType() == KeyType.Character) ? key.getCharacter() : 0;
 
                     if (ch == '[' || ch == ']') {
-                        // 현재 씬 저장 (이전 틱에서 전환이 있었을 수 있음)
+                        // Save current player's scene (may have transitioned this tick)
                         scenes[active] = SceneManager.getInstance().getCurrentScene();
                         active = (ch == '[') ? (active - 1 + n) % n : (active + 1) % n;
                         SceneManager.getInstance().forceScene(scenes[active]);
-                        updateTitle(frame, names, active, n);
+                        updateTitle(frame, active, n);
                     } else {
                         SceneManager.getInstance().handleInput(key);
-                        // 입력 처리 중 씬 전환(예: F2로 대기실 퇴장) 저장
+                        // Capture any scene transition triggered by input
                         scenes[active] = SceneManager.getInstance().getCurrentScene();
                     }
                 }
 
                 screen.clear();
                 SceneManager.getInstance().render(tg);
-                // 렌더 중 자동 전환(WaitingRoom → GamePlay 등) 저장
+                // Capture auto-transitions that fire during render (e.g. WaitingRoom -> GamePlay)
                 scenes[active] = SceneManager.getInstance().getCurrentScene();
 
-                drawHud(tg, names, active, n);
+                drawHud(tg, active, n);
                 screen.refresh();
                 Thread.sleep(33);
             }
         } finally {
             try { screen.close(); } catch (IOException ignored) {}
-            for (BangClient c : clients) c.disconnect();
+            System.exit(0);
         }
     }
 
     // ─────────────────────────────────────────────────────────────────────────
 
-    private static void updateTitle(javax.swing.JFrame frame, String[] names, int active, int n) {
+    private static void updateTitle(javax.swing.JFrame frame, int active, int n) {
         if (frame == null) return;
+        String role = (active == 0) ? "HOST" : "CLIENT";
         frame.setTitle(String.format(
             "BANG! TEST  [%d/%d] %s  |  [ = prev player   ] = next player",
-            active + 1, n, names[active]));
+            active + 1, n, role));
     }
 
-    private static void drawHud(TextGraphics tg, String[] names, int active, int n) {
-        String prev = active > 0   ? "< " + names[active - 1] : "";
-        String cur  = String.format("[ %s  %d/%d ]", names[active], active + 1, n);
-        String next = active < n-1 ? names[active + 1] + " >" : "";
-        String line = String.format("  %-14s  %s  %-14s    [ < prev   next > ]",
+    private static void drawHud(TextGraphics tg, int active, int n) {
+        String role = (active == 0) ? "HOST" : "CLIENT";
+        String prev = (active > 0)   ? "< P" + active              : "";
+        String cur  = String.format("[ P%d %s  %d/%d ]", active + 1, role, active + 1, n);
+        String next = (active < n-1) ? "P" + (active + 2) + " >"   : "";
+        String line = String.format("  %-16s  %s  %-16s  [ < prev   next > ]",
             prev, cur, next);
 
         tg.setForegroundColor(TextColor.ANSI.BLACK);

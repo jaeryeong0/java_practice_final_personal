@@ -104,6 +104,17 @@ public class BangServer {
                 return;
             }
 
+            // Cat Balou discard-area choice (current player only, during sub-selection)
+            if ("CAT_BALOU_PICK".equals(type)) {
+                if (game != null
+                        && game.getState() == GameState.SELECT_CAT_BALOU
+                        && h.playerIdx == game.getCurrentPlayerIdx()) {
+                    game.confirmCatBalou(num(action, "choiceIdx"));
+                    broadcastState();
+                }
+                return;
+            }
+
             // Sid Ketchum can heal at any time, even outside their own turn
             if ("SID_HEAL".equals(type)) {
                 if (h.playerIdx >= 0 && h.playerIdx < game.players.size()) {

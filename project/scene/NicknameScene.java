@@ -3,9 +3,13 @@ package scene;
 import com.googlecode.lanterna.TerminalPosition;
 import com.googlecode.lanterna.TerminalSize;
 import com.googlecode.lanterna.graphics.TextGraphics;
+import com.googlecode.lanterna.graphics.TextImage;
 import com.googlecode.lanterna.input.KeyStroke;
 import com.googlecode.lanterna.input.KeyType;
 import java.io.IOException;
+
+import tools.Assets;
+import tools.Util;
 
 public class NicknameScene implements Scene {
 
@@ -46,22 +50,53 @@ public class NicknameScene implements Scene {
     public void render(TextGraphics tg) {
         tickCount++;
         tg.fillRectangle(new TerminalPosition(0, 0), new TerminalSize(COLS, ROWS), ' ');
-        tg.putString(0, 0, "[ NicknameScene ]");
 
-        String mode = isHost ? "[ HOST ]" : "[ CLIENT ]";
-        tg.putString((COLS - mode.length()) / 2, ROWS / 2 - 4, mode);
+        // title art (centered)
+        int titleCol = (COLS - Assets.TITLE.getSize().getColumns()) / 2;
+        Util.placeImage(tg, new TerminalPosition(titleCol, 8), Assets.TITLE, "YELLOW_BRIGHT");
+        int subtitleCol = (COLS - Assets.SUBTITLE.getSize().getColumns()) / 2;
+        Util.placeImage(tg, new TerminalPosition(subtitleCol, 8 + Assets.TITLE.getSize().getRows() + 2), Assets.SUBTITLE, "WHITE");
 
-        String prompt = "Enter your nickname:";
-        tg.putString((COLS - prompt.length()) / 2, ROWS / 2 - 1, prompt);
+        // popup box
+        int popupWidth  = 50;
+        int popupHeight = 9;
+        int popupCol    = (COLS - popupWidth) / 2;
+        int popupRow    = (ROWS - popupHeight) / 2;
 
-        int inputCol = (COLS - 30) / 2;
-        String inputDisplay = "> " + nickname;
-        tg.putString(inputCol, ROWS / 2 + 1, inputDisplay);
-        if ((tickCount / 15) % 2 == 0) {
-            tg.putString(inputCol + inputDisplay.length(), ROWS / 2 + 1, "_");
+        tg.fillRectangle(new TerminalPosition(popupCol, popupRow),
+                         new TerminalSize(popupWidth, popupHeight), ' ');
+
+        TextImage topBorder    = Util.createTextImage(new String[]{ "┌" + "─".repeat(popupWidth - 2) + "┐" });
+        TextImage bottomBorder = Util.createTextImage(new String[]{ "└" + "─".repeat(popupWidth - 2) + "┘" });
+        TextImage sideBar      = Util.createTextImage(new String[]{ "│" });
+        Util.placeImage(tg, new TerminalPosition(popupCol, popupRow),                   topBorder,    "WHITE");
+        Util.placeImage(tg, new TerminalPosition(popupCol, popupRow + popupHeight - 1), bottomBorder, "WHITE");
+        for (int r = 1; r < popupHeight - 1; r++) {
+            Util.placeImage(tg, new TerminalPosition(popupCol,                  popupRow + r), sideBar, "WHITE");
+            Util.placeImage(tg, new TerminalPosition(popupCol + popupWidth - 1, popupRow + r), sideBar, "WHITE");
         }
 
-        String hint = "[ENTER] Confirm";
-        tg.putString((COLS - hint.length()) / 2, ROWS / 2 + 3, hint);
+        // title, prompt, hint (Assets 에셋)
+        int nicknameTitle = popupCol + (popupWidth - Assets.NICKNAME_TITLE.getSize().getColumns()) / 2;
+        Util.placeImage(tg, new TerminalPosition(nicknameTitle, popupRow + 1), Assets.NICKNAME_TITLE, "YELLOW_BRIGHT");
+
+        Util.placeImage(tg, new TerminalPosition(popupCol + 2, popupRow + 3), Assets.NICKNAME_PROMPT, "WHITE");
+
+        int hintCol = popupCol + (popupWidth - Assets.NICKNAME_HINT.getSize().getColumns()) / 2;
+        Util.placeImage(tg, new TerminalPosition(hintCol, popupRow + 6), Assets.NICKNAME_HINT, "WHITE");
+
+        // input field
+        int inputInner = popupWidth - 4;
+        TextImage inputBox = Util.createTextImage(new String[]{ "[" + " ".repeat(inputInner - 2) + "]" });
+        Util.placeImage(tg, new TerminalPosition(popupCol + 2, popupRow + 4), inputBox, "WHITE");
+
+        TextImage typedText = Util.createTextImage(new String[]{ nickname.toString() });
+        Util.placeImage(tg, new TerminalPosition(popupCol + 3, popupRow + 4), typedText, "YELLOW_BRIGHT");
+
+        // blinking block cursor
+        if ((tickCount / 15) % 2 == 0) {
+            TextImage cursor = Util.createTextImage(new String[]{ "█" });
+            Util.placeImage(tg, new TerminalPosition(popupCol + 3 + nickname.length(), popupRow + 4), cursor, "YELLOW_BRIGHT");
+        }
     }
 }

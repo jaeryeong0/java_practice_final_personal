@@ -55,7 +55,8 @@ public class Protocol {
         sb.append("]");
 
         sb.append(",\"store\":").append(cardsJson(game.getGeneralStorePool()));
-        kInt(sb, "storePickerIdx", game.getGeneralStorePickerIdx());
+        kInt(sb, "storePickerIdx",    game.getGeneralStorePickerIdx());
+        kInt(sb, "catBalouTargetIdx", game.getCatBalouTargetIdx());
         sb.append(",\"topDiscard\":").append(cardJson(game.getTopDiscard()));
 
         List<String> full = game.getLog();
@@ -117,10 +118,11 @@ public class Protocol {
             int[] p = {0};
             Map<String, Object> root = (Map<String, Object>) parseValue(json, p);
 
-            cs.gameState        = str(root, "state");
-            cs.currentPlayerIdx = num(root, "currentPlayerIdx");
-            cs.myPlayerIdx      = num(root, "myPlayerIdx");
-            cs.storePickerIdx   = num(root, "storePickerIdx");
+            cs.gameState          = str(root, "state");
+            cs.currentPlayerIdx   = num(root, "currentPlayerIdx");
+            cs.myPlayerIdx        = num(root, "myPlayerIdx");
+            cs.storePickerIdx     = num(root, "storePickerIdx");
+            cs.catBalouTargetIdx  = num(root, "catBalouTargetIdx");
 
             if ("LOBBY".equals(cs.gameState)) {
                 cs.maxPlayers = num(root, "maxPlayers");
