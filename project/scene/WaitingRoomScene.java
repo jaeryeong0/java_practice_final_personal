@@ -33,16 +33,10 @@ public class WaitingRoomScene implements Scene {
     private static final int ROW_BTM_BAR    = 61;
     private static final int ROW_BTM_BORDER = 62;
 
-    private static final int MAX_CHAT = 20;
-
     // test data
-    private String[]  playerNicks  = { "lkjo131", "asfwe123", "wefawef", "aa", null, null, null };
     private boolean[] playerReady  = { true, true, false, true, false, false, false };
-    private int hostIndex = 0;
     private int myIndex   = 2;
 
-    private String[]      chatLog  = new String[MAX_CHAT];
-    private int           chatLogCount;
     private StringBuilder chatInput = new StringBuilder();
     private int           tickCount;
 
@@ -50,8 +44,7 @@ public class WaitingRoomScene implements Scene {
 
     @Override
     public void enter() {
-        tickCount    = 0;
-        chatLogCount = 0;
+        tickCount = 0;
         chatInput.setLength(0);
     }
 
@@ -63,12 +56,17 @@ public class WaitingRoomScene implements Scene {
     @Override
     public void handleInput(KeyStroke key) throws IOException {
         KeyType type = key.getKeyType();
+        ClientGameState cs = client.getState();
         if (type == KeyType.F1) {
             playerReady[myIndex] = !playerReady[myIndex];
         } else if (type == KeyType.F2 || type == KeyType.Escape) {
-            SceneManager.getInstance().changeScene(new TitleScene());
+            boolean wasHost = cs.myPlayerIdx == 0;
+            client.disconnect();
+            SceneManager.getInstance().changeScene(new NicknameScene(wasHost));
         } else if (type == KeyType.Enter) {
-            if (chatInput.length() > 0) {
+            if (cs.myPlayerIdx == 0 && cs.lobbyNames.size() >= 4) {
+                client.sendAction("{\"type\":\"START_GAME\"}");
+            } else if (chatInput.length() > 0) {
                 sendChat();
             }
         } else if (type == KeyType.Backspace) {
@@ -79,13 +77,11 @@ public class WaitingRoomScene implements Scene {
     }
 
     private void sendChat() {
-        String msg = playerNicks[myIndex] + ": " + chatInput;
-        if (chatLogCount < MAX_CHAT) {
-            chatLog[chatLogCount++] = msg;
-        } else {
-            System.arraycopy(chatLog, 1, chatLog, 0, MAX_CHAT - 1);
-            chatLog[MAX_CHAT - 1] = msg;
-        }
+        ClientGameState cs = client.getState();
+        String name = cs.myPlayerIdx < cs.lobbyNames.size() ? cs.lobbyNames.get(cs.myPlayerIdx) : "?";
+        String msg = name + ": " + chatInput.toString();
+        String escaped = msg.replace("\\", "\\\\").replace("\"", "\\\"");
+        client.sendAction("{\"type\":\"CHAT\",\"msg\":\"" + escaped + "\"}");
         chatInput.setLength(0);
     }
 
@@ -106,9 +102,9 @@ public class WaitingRoomScene implements Scene {
         renderTitle(tg);
         renderSectionHeaders(tg, cs);
         renderParticipants(tg, cs);
-        renderChat(tg);
+        renderChat(tg, cs);
         renderInfo(tg);
-        renderBottomBar(tg);
+        renderBottomBar(tg, cs);
     }
 
     private void renderBorders(TextGraphics tg) {
@@ -127,6 +123,8 @@ public class WaitingRoomScene implements Scene {
 
         // bottom content divider (full width)
         tg.putString(0, ROW_BTM_DIV, "├" + "─".repeat(COLS - 2) + "┤");
+
+        tg.putString(1, 0, " WaitingRoomScene ");
 
         // column dividers
         for (int r = ROW_SECT_DIV + 1; r < ROW_BTM_DIV; r++) {
@@ -171,12 +169,13 @@ public class WaitingRoomScene implements Scene {
         }
     }
 
-    private void renderChat(TextGraphics tg) {
+    private void renderChat(TextGraphics tg, ClientGameState cs) {
         int innerWidth = COL_DIV2 - COL_DIV1 - 2;
         int maxVisible = ROW_CHAT_SEP - ROW_CONTENT;
-        int start = Math.max(0, chatLogCount - maxVisible);
-        for (int i = start; i < chatLogCount; i++) {
-            String msg = chatLog[i];
+        int msgCount = cs.chatMessages.size();
+        int start = Math.max(0, msgCount - maxVisible);
+        for (int i = start; i < msgCount; i++) {
+            String msg = cs.chatMessages.get(i);
             if (msg.length() > innerWidth) msg = msg.substring(0, innerWidth);
             tg.putString(COL_DIV1 + 1, ROW_CONTENT + (i - start), msg);
         }
@@ -206,10 +205,16 @@ public class WaitingRoomScene implements Scene {
         }
     }
 
-    private void renderBottomBar(TextGraphics tg) {
-        String bar = (myIndex == hostIndex)
-            ? "[F1] Ready      [F2] Leave      [ENTER] Start Game (Host)"
-            : "[F1] Ready      [F2] Leave      [ENTER] Send Chat";
+    private void renderBottomBar(TextGraphics tg, ClientGameState cs) {
+        String bar;
+        if (cs.myPlayerIdx == 0) {
+            int count = cs.lobbyNames.size();
+            bar = count >= 4
+                ? "[F2] Leave      [ENTER] Start Game (" + count + " players)"
+                : "[F2] Leave      Waiting for players... (" + count + "/4 minimum)";
+        } else {
+            bar = "[F2] Leave      [ENTER] Send Chat";
+        }
         tg.putString((COLS - bar.length()) / 2, ROW_BTM_BAR, bar);
     }
 }

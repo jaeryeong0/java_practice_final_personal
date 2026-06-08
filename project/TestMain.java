@@ -11,126 +11,130 @@ import com.googlecode.lanterna.terminal.swing.SwingTerminalFontConfiguration;
 
 import net.BangClient;
 import net.BangServer;
-import scene.GamePlayScene;
+import scene.Scene;
+import scene.SceneManager;
+import scene.WaitingRoomScene;
 
 import java.awt.Font;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
 
 /**
- * Single-window test launcher.
- * Starts an embedded server and connects N clients in one JVM.
- * Use [ / ] to switch between player views.
+ * 테스트 모드 진입점.
+ * 하나의 창에서 N명의 플레이어 뷰를 실행하며, [ / ] 키로 전환합니다.
  *
- * Usage:
- *   java TestMain <name1> <name2> ... <nameN>
- *   java TestMain Alice Bob Carol Dave
+ * 실행:  java TestMain P1 P2 P3 P4  (4~7명)
  */
 public class TestMain {
 
-    static final int SCREEN_COL = 270;
-    static final int SCREEN_ROW = 70;
+    private static final int SCREEN_COL = 270;
+    private static final int SCREEN_ROW = 70;
+    private static final int TEST_PORT  = 19999;
 
     public static void main(String[] args) throws Exception {
-        int n    = args.length > 0 ? args.length : 4;
-        int port = 12345;
 
-        if (n < 4 || n > 7) {
-            System.err.println("Error: player count must be 4–7 (got " + n + ").");
-            System.err.println("Usage: java -jar TestMain.jar <name1> <name2> ... <nameN>");
-            System.exit(1);
+        // ── 1. 플레이어 이름 결정 ─────────────────────────────────────────
+        int n = (args.length >= 4 && args.length <= 7) ? args.length : 4;
+        String[] names = new String[n];
+        for (int i = 0; i < n; i++) {
+            names[i] = (i < args.length) ? args[i] : "P" + (i + 1);
         }
 
-        // start embedded server (daemon so it dies with the JVM)
-        Thread serverThread = new Thread(() -> new BangServer(port, n).start(), "test-server");
+        // ── 2. 내장 서버 시작 ─────────────────────────────────────────────
+        Thread serverThread = new Thread(() -> new BangServer(TEST_PORT, n).start(), "test-server");
         serverThread.setDaemon(true);
         serverThread.start();
         Thread.sleep(300);
 
-        // connect all clients
-        List<BangClient>    clients = new ArrayList<>();
-        List<GamePlayScene> scenes  = new ArrayList<>();
+        // ── 3. 클라이언트 연결 및 씬 생성 ────────────────────────────────
+        BangClient[] clients = new BangClient[n];
+        Scene[]      scenes  = new Scene[n];
         for (int i = 0; i < n; i++) {
-            String name = i < args.length ? args[i] : "P" + (i + 1);
-            BangClient c = new BangClient();
-            c.connect("localhost", port, name);
-            clients.add(c);
-            scenes.add(new GamePlayScene(c));
-            Thread.sleep(100);
+            clients[i] = new BangClient();
+            clients[i].connect("localhost", TEST_PORT, names[i]);
+            scenes[i]  = new WaitingRoomScene(clients[i]);
+            scenes[i].enter();
+            Thread.sleep(80); // JOIN 패킷 순서 보장
         }
 
-        for (GamePlayScene s : scenes) s.enter();
+        // ── 4. Lanterna 창 생성 ───────────────────────────────────────────
+        DefaultTerminalFactory factory = new DefaultTerminalFactory();
+        factory.setPreferTerminalEmulator(true);
+        factory.setTerminalEmulatorFontConfiguration(
+            SwingTerminalFontConfiguration.newInstance(new Font("Consolas", Font.PLAIN, 12)));
+        factory.setInitialTerminalSize(new TerminalSize(SCREEN_COL, SCREEN_ROW));
+
+        Terminal terminal = factory.createTerminal();
+        javax.swing.JFrame frame = (terminal instanceof javax.swing.JFrame)
+            ? (javax.swing.JFrame) terminal : null;
+        if (frame != null) frame.setResizable(false);
+
+        Screen screen = new TerminalScreen(terminal);
+        screen.startScreen();
+        screen.setCursorPosition(null);
+        TextGraphics tg = screen.newTextGraphics();
+
+        // ── 5. 첫 번째 플레이어 뷰 활성화 ────────────────────────────────
         int active = 0;
+        SceneManager.getInstance().forceScene(scenes[active]);
+        updateTitle(frame, names, active, n);
 
-        // open single window
-        Screen screen = null;
+        // ── 6. 메인 루프 ─────────────────────────────────────────────────
         try {
-            DefaultTerminalFactory factory = new DefaultTerminalFactory();
-            factory.setPreferTerminalEmulator(true);
-            factory.setTerminalEmulatorFontConfiguration(
-                SwingTerminalFontConfiguration.newInstance(
-                    new Font("Consolas", Font.PLAIN, 12)));
-            factory.setInitialTerminalSize(new TerminalSize(SCREEN_COL, SCREEN_ROW));
-
-            Terminal terminal = factory.createTerminal();
-            if (terminal instanceof javax.swing.JFrame) {
-                javax.swing.JFrame frame = (javax.swing.JFrame) terminal;
-                frame.setResizable(false);
-                frame.setTitle("BANG! Test");
-            }
-
-            screen = new TerminalScreen(terminal);
-            screen.startScreen();
-            screen.setCursorPosition(null);
-
-            TextGraphics tg = screen.newTextGraphics();
-
             while (true) {
                 KeyStroke key = screen.pollInput();
+
                 if (key != null) {
                     if (key.getKeyType() == KeyType.EOF) break;
 
-                    if (key.getKeyType() == KeyType.Character) {
-                        char c = key.getCharacter();
-                        if (c == ']') {
-                            active = (active + 1) % n;
-                            scenes.get(active).enter();
-                            continue;
-                        }
-                        if (c == '[') {
-                            active = (active - 1 + n) % n;
-                            scenes.get(active).enter();
-                            continue;
-                        }
+                    char ch = (key.getKeyType() == KeyType.Character) ? key.getCharacter() : 0;
+
+                    if (ch == '[' || ch == ']') {
+                        // 현재 씬 저장 (이전 틱에서 전환이 있었을 수 있음)
+                        scenes[active] = SceneManager.getInstance().getCurrentScene();
+                        active = (ch == '[') ? (active - 1 + n) % n : (active + 1) % n;
+                        SceneManager.getInstance().forceScene(scenes[active]);
+                        updateTitle(frame, names, active, n);
+                    } else {
+                        SceneManager.getInstance().handleInput(key);
+                        // 입력 처리 중 씬 전환(예: F2로 대기실 퇴장) 저장
+                        scenes[active] = SceneManager.getInstance().getCurrentScene();
                     }
-                    scenes.get(active).handleInput(key);
                 }
 
                 screen.clear();
-                scenes.get(active).render(tg);
-                drawHud(tg, clients.get(active), active, n);
+                SceneManager.getInstance().render(tg);
+                // 렌더 중 자동 전환(WaitingRoom → GamePlay 등) 저장
+                scenes[active] = SceneManager.getInstance().getCurrentScene();
+
+                drawHud(tg, names, active, n);
                 screen.refresh();
                 Thread.sleep(33);
             }
         } finally {
-            if (screen != null) try { screen.close(); } catch (IOException ignored) {}
+            try { screen.close(); } catch (IOException ignored) {}
             for (BangClient c : clients) c.disconnect();
-            System.exit(0);
         }
     }
 
-    private static void drawHud(TextGraphics tg, BangClient client, int active, int n) {
-        String name = client.getState().myPlayer() != null
-            ? client.getState().myPlayer().name
-            : "P" + (active + 1);
-        String hud = String.format(
-            "  VIEWING: %-10s (%d/%d)   [ = prev player     ] = next player  ",
-            name, active + 1, n);
+    // ─────────────────────────────────────────────────────────────────────────
+
+    private static void updateTitle(javax.swing.JFrame frame, String[] names, int active, int n) {
+        if (frame == null) return;
+        frame.setTitle(String.format(
+            "BANG! TEST  [%d/%d] %s  |  [ = prev player   ] = next player",
+            active + 1, n, names[active]));
+    }
+
+    private static void drawHud(TextGraphics tg, String[] names, int active, int n) {
+        String prev = active > 0   ? "< " + names[active - 1] : "";
+        String cur  = String.format("[ %s  %d/%d ]", names[active], active + 1, n);
+        String next = active < n-1 ? names[active + 1] + " >" : "";
+        String line = String.format("  %-14s  %s  %-14s    [ < prev   next > ]",
+            prev, cur, next);
 
         tg.setForegroundColor(TextColor.ANSI.BLACK);
         tg.setBackgroundColor(TextColor.ANSI.YELLOW_BRIGHT);
-        tg.putString(0, SCREEN_ROW - 1, hud);
+        tg.putString(0, SCREEN_ROW - 1, line);
         tg.setForegroundColor(TextColor.ANSI.DEFAULT);
         tg.setBackgroundColor(TextColor.ANSI.DEFAULT);
     }

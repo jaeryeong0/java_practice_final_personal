@@ -497,6 +497,20 @@ public class GameLogic {
             while (p.hand.size() > p.maxHp) { deck.discard(p.hand.remove(0)); d++; }
             if (d > 0) addLog(p.name + " discarded " + d + " card(s).");
             addLog("[" + p.name + "] End of turn.");
+            // Pass Dynamite to the next alive player so it appears on their board
+            // and is checked at the start of their turn by handleFieldEffects().
+            Iterator<Card> it = p.field.iterator();
+            while (it.hasNext()) {
+                Card c = it.next();
+                if (c instanceof DynamiteCard) {
+                    int nextIdx = (players.indexOf(p) + 1) % players.size();
+                    while (players.get(nextIdx).hp <= 0)
+                        nextIdx = (nextIdx + 1) % players.size();
+                    it.remove();
+                    players.get(nextIdx).field.add(c);
+                    addLog("[Dynamite] Moved to " + players.get(nextIdx).name + "'s board.");
+                }
+            }
             advanceToNextPlayer();
         }
 
@@ -558,19 +572,17 @@ public class GameLogic {
                     if (check == null || check.suit != Suit.HEART) { addLog(p.name + " failed jail check!"); return false; }
                     addLog(p.name + " escaped jail!");
                 } else if (c instanceof DynamiteCard) {
-                    addLog("[Dynamite] Draw check...");
+                    addLog("[Dynamite] Draw check for " + p.name + "...");
                     Card check = drawCheckFor(p);
+                    String checkResult = check != null
+                        ? check.suit.name() + " " + check.value
+                        : "none";
+                    addLog("[Dynamite] Flipped: " + checkResult);
                     if (check != null && check.suit == Suit.SPADE && check.value >= 2 && check.value <= 9) {
                         addLog("Dynamite explodes! " + p.name + " -3HP");
                         loseHP(p, null, 3); it.remove(); deck.discard(c);
                     } else {
-                        // Pass to the next alive player (skip dead players)
-                        int nextIdx = (players.indexOf(p) + 1) % players.size();
-                        while (players.get(nextIdx).hp <= 0)
-                            nextIdx = (nextIdx + 1) % players.size();
-                        addLog("Dynamite passes to " + players.get(nextIdx).name + ".");
-                        it.remove();
-                        players.get(nextIdx).field.add(c);
+                        addLog("Dynamite did not explode. It stays with " + p.name + " until end of turn.");
                     }
                 }
             }

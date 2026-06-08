@@ -20,7 +20,8 @@ public class ClientGameState {
     public CardSnap topDiscard = null;
 
     // Lobby-only fields
-    public final List<String> lobbyNames = new ArrayList<>();
+    public final List<String> lobbyNames    = new ArrayList<>();
+    public final List<String> chatMessages  = new ArrayList<>();
     public int maxPlayers = 4;
 
     // ---- convenience -------------------------------------------------------

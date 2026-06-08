@@ -71,7 +71,7 @@ public class Protocol {
     }
 
     /** Lobby broadcast – includes myPlayerIdx so client knows who they are. */
-    public static String buildLobby(List<String> names, int maxPlayers, int myPlayerIdx) {
+    public static String buildLobby(List<String> names, int maxPlayers, int myPlayerIdx, List<String> chat) {
         StringBuilder sb = new StringBuilder("{");
         kStr(sb, "state",      "LOBBY", true);
         kInt(sb, "maxPlayers", maxPlayers);
@@ -80,6 +80,12 @@ public class Protocol {
         for (int i = 0; i < names.size(); i++) {
             if (i > 0) sb.append(",");
             sb.append("\"").append(esc(names.get(i))).append("\"");
+        }
+        sb.append("]");
+        sb.append(",\"chat\":[");
+        for (int i = 0; i < chat.size(); i++) {
+            if (i > 0) sb.append(",");
+            sb.append("\"").append(esc(chat.get(i))).append("\"");
         }
         sb.append("]}");
         return sb.toString();
@@ -120,6 +126,8 @@ public class Protocol {
                 cs.maxPlayers = num(root, "maxPlayers");
                 for (Object n : list(root, "joined"))
                     cs.lobbyNames.add(n != null ? n.toString() : "");
+                for (Object c : list(root, "chat"))
+                    cs.chatMessages.add(c != null ? c.toString() : "");
                 return cs;
             }
 

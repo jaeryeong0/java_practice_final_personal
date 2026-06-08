@@ -8,9 +8,7 @@ import com.googlecode.lanterna.terminal.DefaultTerminalFactory;
 import com.googlecode.lanterna.terminal.Terminal;
 import com.googlecode.lanterna.terminal.swing.SwingTerminalFontConfiguration;
 
-import net.BangClient;
-import net.BangServer;
-import scene.GamePlayScene;
+import scene.NicknameScene;
 import scene.SceneManager;
 
 import java.awt.Font;
@@ -34,26 +32,6 @@ public class ClientMain {
     public static final int SCREEN_ROW = 70;
 
     public static void main(String[] args) throws Exception {
-        String host       = "localhost";
-        int    port       = 12345;
-        String playerName = "Player";
-
-        if (args.length > 0 && "local".equals(args[0])) {
-            port       = args.length > 1 ? Integer.parseInt(args[1]) : 12345;
-            int maxPl  = args.length > 2 ? Integer.parseInt(args[2]) : 4;
-            playerName = args.length > 3 ? args[3] : "";
-            final int p = port, mp = maxPl;
-            new Thread(() -> new BangServer(p, mp).start(), "local-server").start();
-            Thread.sleep(300); // let the server socket open
-        } else {
-            host       = args.length > 0 ? args[0] : "localhost";
-            port       = args.length > 1 ? Integer.parseInt(args[1]) : 12345;
-            playerName = args.length > 2 ? args[2] : "";
-        }
-
-        BangClient client = new BangClient();
-        client.connect(host, port, playerName);
-
         Screen screen = null;
         try {
             DefaultTerminalFactory factory = new DefaultTerminalFactory();
@@ -67,7 +45,7 @@ public class ClientMain {
             if (terminal instanceof javax.swing.JFrame) {
                 javax.swing.JFrame frame = (javax.swing.JFrame) terminal;
                 frame.setResizable(false);
-                frame.setTitle("BANG! [" + playerName + "]");
+                frame.setTitle("BANG! CLIENT");
             }
 
             screen = new TerminalScreen(terminal);
@@ -75,12 +53,17 @@ public class ClientMain {
             screen.setCursorPosition(null);
 
             TextGraphics tg = screen.newTextGraphics();
-            SceneManager.getInstance().changeScene(new GamePlayScene(client));
+            SceneManager.getInstance().changeScene(new NicknameScene(false));
 
             while (true) {
                 KeyStroke key = screen.pollInput();
                 if (key != null) {
-                    if (key.getKeyType() == KeyType.EOF) break;
+                    if (key.getKeyType() == KeyType.EOF) {
+                        // X버튼 = F2와 동일하게 처리 (disconnect 등 씬 정리)
+                        SceneManager.getInstance().handleInput(
+                            new KeyStroke(KeyType.F2));
+                        break;
+                    }
                     SceneManager.getInstance().handleInput(key);
                 }
                 screen.clear();
@@ -90,7 +73,6 @@ public class ClientMain {
             }
         } finally {
             if (screen != null) try { screen.close(); } catch (IOException ignored) {}
-            client.disconnect();
         }
     }
 }

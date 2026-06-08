@@ -56,7 +56,7 @@ $cp  = "$bin;$lib"
 
 # Compile
 Write-Host ""
-Write-Host "[1/3] Compiling..." -ForegroundColor Yellow
+Write-Host "[1/2] Compiling..." -ForegroundColor Yellow
 
 if (-not (Test-Path $bin)) { New-Item -ItemType Directory $bin | Out-Null }
 
@@ -74,14 +74,19 @@ if ($LASTEXITCODE -ne 0) {
 }
 Write-Host "[OK]   Compiled successfully." -ForegroundColor Green
 
-# Launch
+# Launch test window
 Write-Host ""
-Write-Host "[2/3] Launching..." -ForegroundColor Yellow
+Write-Host "[2/2] Launching test window ($n players)..." -ForegroundColor Yellow
 
 $launchArgs = @("-cp", $cp, "TestMain") + $names
 Start-Process $javaw -ArgumentList $launchArgs
 
 Write-Host ""
-Write-Host "[3/3] Done.  Single window launched." -ForegroundColor Green
-Write-Host "  Use  [  and  ]  to switch between player views." -ForegroundColor DarkCyan
+Write-Host "[DONE] Single test window launched." -ForegroundColor Green
+Write-Host ""
+Write-Host "  Controls:" -ForegroundColor DarkCyan
+Write-Host "    [  = switch to previous player view" -ForegroundColor DarkCyan
+Write-Host "    ]  = switch to next player view" -ForegroundColor DarkCyan
+Write-Host "    Input goes to the currently viewed player." -ForegroundColor DarkCyan
+Write-Host "    As host (P1), press Enter to start once 4+ players have joined." -ForegroundColor DarkCyan
 Write-Host ""
