@@ -12,15 +12,6 @@ do {
     $n   = $raw -as [int]
 } while (-not $n -or $n -lt 4 -or $n -gt 7)
 
-# Player names
-$names = @()
-for ($i = 0; $i -lt $n; $i++) {
-    $default = "P$($i + 1)"
-    $name    = Read-Host "  Player $($i + 1) name  [Enter = $default]"
-    if ([string]::IsNullOrWhiteSpace($name)) { $name = $default }
-    $names  += $name
-}
-
 # Find Java 11
 $java11bin = $null
 $searchRoots = @(
@@ -56,7 +47,7 @@ $cp  = "$bin;$lib"
 
 # Compile
 Write-Host ""
-Write-Host "[1/3] Compiling..." -ForegroundColor Yellow
+Write-Host "[1/2] Compiling..." -ForegroundColor Yellow
 
 if (-not (Test-Path $bin)) { New-Item -ItemType Directory $bin | Out-Null }
 
@@ -74,14 +65,21 @@ if ($LASTEXITCODE -ne 0) {
 }
 Write-Host "[OK]   Compiled successfully." -ForegroundColor Green
 
-# Launch
+# Launch single test window
 Write-Host ""
-Write-Host "[2/3] Launching..." -ForegroundColor Yellow
+Write-Host "[2/2] Launching test window ($n players)..." -ForegroundColor Yellow
 
-$launchArgs = @("-cp", $cp, "TestMain") + $names
-Start-Process $javaw -ArgumentList $launchArgs
+Start-Process $javaw -ArgumentList @("-cp", $cp, "TestMain", $n)
 
 Write-Host ""
-Write-Host "[3/3] Done.  Single window launched." -ForegroundColor Green
-Write-Host "  Use  [  and  ]  to switch between player views." -ForegroundColor DarkCyan
+Write-Host "[DONE] Test window launched." -ForegroundColor Green
+Write-Host ""
+Write-Host "  In-window controls:" -ForegroundColor DarkCyan
+Write-Host "    [  = switch to previous player view" -ForegroundColor DarkCyan
+Write-Host "    ]  = switch to next player view" -ForegroundColor DarkCyan
+Write-Host "    Input goes to the currently shown player." -ForegroundColor DarkCyan
+Write-Host ""
+Write-Host "  Typical flow:" -ForegroundColor DarkCyan
+Write-Host "    P1 (HOST)  : enter nickname -> Enter port to start server" -ForegroundColor DarkCyan
+Write-Host "    P2..PN (CLIENT): enter nickname -> enter localhost:<port> to join" -ForegroundColor DarkCyan
 Write-Host ""

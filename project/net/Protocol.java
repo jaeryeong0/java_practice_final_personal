@@ -55,7 +55,8 @@ public class Protocol {
         sb.append("]");
 
         sb.append(",\"store\":").append(cardsJson(game.getGeneralStorePool()));
-        kInt(sb, "storePickerIdx", game.getGeneralStorePickerIdx());
+        kInt(sb, "storePickerIdx",    game.getGeneralStorePickerIdx());
+        kInt(sb, "catBalouTargetIdx", game.getCatBalouTargetIdx());
         sb.append(",\"topDiscard\":").append(cardJson(game.getTopDiscard()));
 
         List<String> full = game.getLog();
@@ -71,7 +72,7 @@ public class Protocol {
     }
 
     /** Lobby broadcast – includes myPlayerIdx so client knows who they are. */
-    public static String buildLobby(List<String> names, int maxPlayers, int myPlayerIdx) {
+    public static String buildLobby(List<String> names, int maxPlayers, int myPlayerIdx, List<String> chat) {
         StringBuilder sb = new StringBuilder("{");
         kStr(sb, "state",      "LOBBY", true);
         kInt(sb, "maxPlayers", maxPlayers);
@@ -80,6 +81,12 @@ public class Protocol {
         for (int i = 0; i < names.size(); i++) {
             if (i > 0) sb.append(",");
             sb.append("\"").append(esc(names.get(i))).append("\"");
+        }
+        sb.append("]");
+        sb.append(",\"chat\":[");
+        for (int i = 0; i < chat.size(); i++) {
+            if (i > 0) sb.append(",");
+            sb.append("\"").append(esc(chat.get(i))).append("\"");
         }
         sb.append("]}");
         return sb.toString();
@@ -111,15 +118,18 @@ public class Protocol {
             int[] p = {0};
             Map<String, Object> root = (Map<String, Object>) parseValue(json, p);
 
-            cs.gameState        = str(root, "state");
-            cs.currentPlayerIdx = num(root, "currentPlayerIdx");
-            cs.myPlayerIdx      = num(root, "myPlayerIdx");
-            cs.storePickerIdx   = num(root, "storePickerIdx");
+            cs.gameState          = str(root, "state");
+            cs.currentPlayerIdx   = num(root, "currentPlayerIdx");
+            cs.myPlayerIdx        = num(root, "myPlayerIdx");
+            cs.storePickerIdx     = num(root, "storePickerIdx");
+            cs.catBalouTargetIdx  = num(root, "catBalouTargetIdx");
 
             if ("LOBBY".equals(cs.gameState)) {
                 cs.maxPlayers = num(root, "maxPlayers");
                 for (Object n : list(root, "joined"))
                     cs.lobbyNames.add(n != null ? n.toString() : "");
+                for (Object c : list(root, "chat"))
+                    cs.chatMessages.add(c != null ? c.toString() : "");
                 return cs;
             }
 

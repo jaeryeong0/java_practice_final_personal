@@ -26,6 +26,7 @@ javac -cp "%LIB%" -d %OUT% -sourcepath . ^
     tools\Util.java ^
     scene\Scene.java ^
     scene\SceneManager.java ^
+    scene\NicknameScene.java ^
     scene\TitleScene.java ^
     scene\WaitingRoomScene.java ^
     scene\GamePlayScene.java ^

@@ -24,8 +24,9 @@ public class BangServer {
     private final int  maxPlayers;
 
     private final Object gameLock = new Object();
-    private final List<ClientHandler> handlers = new CopyOnWriteArrayList<>();
+    private final List<ClientHandler> handlers   = new CopyOnWriteArrayList<>();
     private final List<String>        lobbyNames = new ArrayList<>();
+    private final List<String>        lobbyChat  = new ArrayList<>();
     private Game game = null;
 
     public BangServer(int port, int maxPlayers) {
@@ -70,7 +71,25 @@ public class BangServer {
                 System.out.println("[Server] Joined: " + lobbyNames.get(h.playerIdx)
                     + " (" + lobbyNames.size() + "/" + maxPlayers + ")");
                 broadcastLobby();
-                if (lobbyNames.size() == maxPlayers) startGame();
+                return;
+            }
+
+            // ---- START_GAME (host only, 4~7 players) -----------------------
+            if ("START_GAME".equals(type)) {
+                if (h.playerIdx != 0) return;
+                if (game == null && lobbyNames.size() >= 4) startGame();
+                return;
+            }
+
+            // ---- CHAT (lobby phase) ----------------------------------------
+            if ("CHAT".equals(type)) {
+                if (h.playerIdx >= 0 && game == null) {
+                    String msg = str(action, "msg");
+                    if (!msg.isEmpty()) {
+                        lobbyChat.add(msg);
+                        broadcastLobby();
+                    }
+                }
                 return;
             }
 
@@ -82,6 +101,17 @@ public class BangServer {
                 if ("PICK_STORE".equals(type))
                     game.pickGeneralStoreCard(num(action, "poolIdx"));
                 broadcastState();
+                return;
+            }
+
+            // Cat Balou discard-area choice (current player only, during sub-selection)
+            if ("CAT_BALOU_PICK".equals(type)) {
+                if (game != null
+                        && game.getState() == GameState.SELECT_CAT_BALOU
+                        && h.playerIdx == game.getCurrentPlayerIdx()) {
+                    game.confirmCatBalou(num(action, "choiceIdx"));
+                    broadcastState();
+                }
                 return;
             }
 
@@ -128,12 +158,24 @@ public class BangServer {
     private void broadcastLobby() {
         for (ClientHandler h : handlers) {
             if (h.playerIdx >= 0)
-                h.send(Protocol.buildLobby(lobbyNames, maxPlayers, h.playerIdx));
+                h.send(Protocol.buildLobby(lobbyNames, maxPlayers, h.playerIdx, lobbyChat));
         }
     }
 
     void removeHandler(ClientHandler h) {
         handlers.remove(h);
+        synchronized (gameLock) {
+            int leavingIdx = h.playerIdx;
+            if (leavingIdx >= 0 && game == null && leavingIdx < lobbyNames.size()) {
+                lobbyNames.remove(leavingIdx);
+                for (ClientHandler other : handlers) {
+                    if (other.playerIdx > leavingIdx) {
+                        other.playerIdx--;
+                    }
+                }
+                broadcastLobby();
+            }
+        }
         System.out.println("[Server] Disconnected player " + h.playerIdx);
     }
 

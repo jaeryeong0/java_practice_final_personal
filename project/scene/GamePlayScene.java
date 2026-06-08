@@ -28,9 +28,10 @@ public class GamePlayScene implements Scene {
 
     private final BangClient client;
 
-    private int currentTargetIndex       = 0;
+    private int currentTargetIndex        = 0;
     private int selectedTargetCandidateIdx = 0;
     private int generalStoreSelectedIdx   = 0;
+    private int catBalouSelectedIdx       = 0;
 
     private FocusArea currentFocus;
 
@@ -57,6 +58,7 @@ public class GamePlayScene implements Scene {
         targetBoardCurrentCol       = 0;
         selectedTargetCandidateIdx  = 0;
         generalStoreSelectedIdx     = 0;
+        catBalouSelectedIdx         = 0;
     }
 
     @Override public void exit() {}
@@ -73,9 +75,10 @@ public class GamePlayScene implements Scene {
 
         String state = cs.gameState;
 
-        if ("SELECT_TARGET".equals(state)) { handleTargetSelectionInput(key, cs); return; }
-        if ("GENERAL_STORE".equals(state)) { handleGeneralStoreInput(key, cs);    return; }
-        if ("GAME_OVER".equals(state))     return;
+        if ("SELECT_TARGET".equals(state))    { handleTargetSelectionInput(key, cs); return; }
+        if ("SELECT_CAT_BALOU".equals(state)) { handleCatBalouPickInput(key, cs);    return; }
+        if ("GENERAL_STORE".equals(state))    { handleGeneralStoreInput(key, cs);    return; }
+        if ("GAME_OVER".equals(state))        return;
 
         if (type == KeyType.Tab) {
             FocusArea[] areas = FocusArea.values();
@@ -139,6 +142,27 @@ public class GamePlayScene implements Scene {
             client.sendAction("{\"type\":\"PICK_STORE\",\"poolIdx\":" + generalStoreSelectedIdx + "}");
             generalStoreSelectedIdx = 0;
         }
+    }
+
+    private void handleCatBalouPickInput(KeyStroke key, ClientGameState cs) {
+        if (!cs.isMyTurn()) return;
+        int idx = cs.catBalouTargetIdx;
+        if (idx < 0 || idx >= cs.players.size()) return;
+        PlayerSnap target = cs.players.get(idx);
+        int n = catBalouChoiceCount(target);
+        if (n == 0) return;
+
+        KeyType type = key.getKeyType();
+        if      (type == KeyType.ArrowLeft)  catBalouSelectedIdx = (catBalouSelectedIdx - 1 + n) % n;
+        else if (type == KeyType.ArrowRight) catBalouSelectedIdx = (catBalouSelectedIdx + 1) % n;
+        else if (type == KeyType.Enter) {
+            client.sendAction("{\"type\":\"CAT_BALOU_PICK\",\"choiceIdx\":" + catBalouSelectedIdx + "}");
+            catBalouSelectedIdx = 0;
+        }
+    }
+
+    private int catBalouChoiceCount(PlayerSnap target) {
+        return (target.handSize > 0 ? 1 : 0) + target.field.size() + (target.weapon != null ? 1 : 0);
     }
 
     private void handleMyBoardInput(KeyType arrowKey, ClientGameState cs) {
@@ -341,6 +365,8 @@ public class GamePlayScene implements Scene {
                 tg.putString(start.withRow(start.getRow() + 1 + i),
                     (i == selectedTargetCandidateIdx ? "> " : "  ") + t.name + hp);
             }
+        } else if ("SELECT_CAT_BALOU".equals(state)) {
+            renderCatBalouPick(tg, start, cs);
         } else if ("GENERAL_STORE".equals(state)) {
             tg.putString(start, "[ General Store ]  L/R=browse  Enter=pick");
             String pickerName = cs.storePickerIdx < cs.players.size()
@@ -582,6 +608,38 @@ public class GamePlayScene implements Scene {
         }
     }
 
+    private void renderCatBalouPick(TextGraphics tg, TerminalPosition start, ClientGameState cs) {
+        int idx = cs.catBalouTargetIdx;
+        if (idx < 0 || idx >= cs.players.size()) return;
+        PlayerSnap target = cs.players.get(idx);
+
+        String actorName = cs.currentPlayerIdx < cs.players.size()
+            ? cs.players.get(cs.currentPlayerIdx).name : "?";
+
+        if (!cs.isMyTurn()) {
+            tg.putString(start, "[ Cat Balou ]  " + actorName + " is choosing what to discard from " + target.name + "...");
+            return;
+        }
+
+        tg.putString(start, "[ Cat Balou ]  Choose what to discard from " + target.name + ":");
+
+        // Build choices: hand (random) → field cards → weapon
+        java.util.List<String> choices = new java.util.ArrayList<>();
+        if (target.handSize > 0)
+            choices.add("Hand  (" + target.handSize + " cards — random pick)");
+        for (CardSnap c : target.field)
+            choices.add(c.name + "  [field card]");
+        if (target.weapon != null)
+            choices.add(target.weapon.name + "  [weapon]");
+
+        for (int i = 0; i < choices.size(); i++) {
+            tg.putString(start.withRow(start.getRow() + 1 + i),
+                (i == catBalouSelectedIdx ? "> " : "  ") + "[" + i + "] " + choices.get(i));
+        }
+        tg.putString(start.withRow(start.getRow() + 1 + choices.size()),
+            "L/R = browse   Enter = confirm");
+    }
+
     // --- asset helpers (name-based, no GameLogic class references) ---
 
     private TextImage[] cardSnapImages(List<CardSnap> cards) {
@@ -613,7 +671,7 @@ public class GamePlayScene implements Scene {
             case "Cat Balou":      return Assets.CAT_BALOU;
             case "Barrel":         return Assets.BARREL;
             case "Mustang":        return Assets.MUSTANG;
-            case "Scope":          return Assets.APPALOOSA;
+            case "Scope":          return Assets.SCOPE;
             case "Jail":           return Assets.JAIL;
             case "Dynamite":       return Assets.DYNAMITE;
             default:               return Assets.FRAME;

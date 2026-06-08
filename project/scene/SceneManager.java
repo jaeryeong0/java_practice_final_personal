@@ -60,4 +60,10 @@ public class SceneManager {
             currentScene.render(graphics);
         }
     }
+
+    /** 현재 씬 반환 (테스트 모드에서 씬 저장용). */
+    public Scene getCurrentScene() { return currentScene; }
+
+    /** 라이프사이클 호출 없이 씬 교체 (테스트 모드 플레이어 전환용). */
+    public void forceScene(Scene s) { currentScene = s; }
 }

@@ -9,128 +9,127 @@ import com.googlecode.lanterna.terminal.DefaultTerminalFactory;
 import com.googlecode.lanterna.terminal.Terminal;
 import com.googlecode.lanterna.terminal.swing.SwingTerminalFontConfiguration;
 
-import net.BangClient;
-import net.BangServer;
-import scene.GamePlayScene;
+import scene.NicknameScene;
+import scene.Scene;
+import scene.SceneManager;
 
 import java.awt.Font;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
 
 /**
  * Single-window test launcher.
- * Starts an embedded server and connects N clients in one JVM.
- * Use [ / ] to switch between player views.
  *
- * Usage:
- *   java TestMain <name1> <name2> ... <nameN>
- *   java TestMain Alice Bob Carol Dave
+ * Mirrors running one Main (host) + (N-1) ClientMain (client) windows,
+ * but inside one Swing terminal. Use [ / ] to switch between player views.
+ *
+ * Player 0 = HOST  (NicknameScene -> TitleScene -> starts server, joins)
+ * Player 1..N-1 = CLIENT  (NicknameScene -> TitleScene -> connects to host)
+ *
+ * Usage:  java TestMain <playerCount>   e.g.  java TestMain 4
  */
 public class TestMain {
 
-    static final int SCREEN_COL = 270;
-    static final int SCREEN_ROW = 70;
+    private static final int SCREEN_COL = 270;
+    private static final int SCREEN_ROW = 70;
 
     public static void main(String[] args) throws Exception {
-        int n    = args.length > 0 ? args.length : 4;
-        int port = 12345;
 
-        if (n < 4 || n > 7) {
-            System.err.println("Error: player count must be 4–7 (got " + n + ").");
-            System.err.println("Usage: java -jar TestMain.jar <name1> <name2> ... <nameN>");
-            System.exit(1);
+        // ── 1. Player count ───────────────────────────────────────────────
+        int n = 4;
+        if (args.length > 0) {
+            try { n = Integer.parseInt(args[0]); } catch (NumberFormatException ignored) {}
         }
+        n = Math.max(4, Math.min(7, n));
 
-        // start embedded server (daemon so it dies with the JVM)
-        Thread serverThread = new Thread(() -> new BangServer(port, n).start(), "test-server");
-        serverThread.setDaemon(true);
-        serverThread.start();
-        Thread.sleep(300);
-
-        // connect all clients
-        List<BangClient>    clients = new ArrayList<>();
-        List<GamePlayScene> scenes  = new ArrayList<>();
+        // ── 2. Create one NicknameScene per player (no pre-connections) ───
+        //       Player 0 is the host; the rest are clients.
+        Scene[] scenes = new Scene[n];
         for (int i = 0; i < n; i++) {
-            String name = i < args.length ? args[i] : "P" + (i + 1);
-            BangClient c = new BangClient();
-            c.connect("localhost", port, name);
-            clients.add(c);
-            scenes.add(new GamePlayScene(c));
-            Thread.sleep(100);
+            scenes[i] = new NicknameScene(i == 0);
+            scenes[i].enter();
         }
 
-        for (GamePlayScene s : scenes) s.enter();
+        // ── 3. Lanterna window ────────────────────────────────────────────
+        DefaultTerminalFactory factory = new DefaultTerminalFactory();
+        factory.setPreferTerminalEmulator(true);
+        factory.setTerminalEmulatorFontConfiguration(
+            SwingTerminalFontConfiguration.newInstance(new Font("Consolas", Font.PLAIN, 12)));
+        factory.setInitialTerminalSize(new TerminalSize(SCREEN_COL, SCREEN_ROW));
+
+        Terminal terminal = factory.createTerminal();
+        javax.swing.JFrame frame = (terminal instanceof javax.swing.JFrame)
+            ? (javax.swing.JFrame) terminal : null;
+        if (frame != null) frame.setResizable(false);
+
+        Screen screen = new TerminalScreen(terminal);
+        screen.startScreen();
+        screen.setCursorPosition(null);
+        TextGraphics tg = screen.newTextGraphics();
+
+        // ── 4. Activate player 0's view ───────────────────────────────────
         int active = 0;
+        SceneManager.getInstance().forceScene(scenes[active]);
+        updateTitle(frame, active, n);
 
-        // open single window
-        Screen screen = null;
+        // ── 5. Main loop ──────────────────────────────────────────────────
         try {
-            DefaultTerminalFactory factory = new DefaultTerminalFactory();
-            factory.setPreferTerminalEmulator(true);
-            factory.setTerminalEmulatorFontConfiguration(
-                SwingTerminalFontConfiguration.newInstance(
-                    new Font("Consolas", Font.PLAIN, 12)));
-            factory.setInitialTerminalSize(new TerminalSize(SCREEN_COL, SCREEN_ROW));
-
-            Terminal terminal = factory.createTerminal();
-            if (terminal instanceof javax.swing.JFrame) {
-                javax.swing.JFrame frame = (javax.swing.JFrame) terminal;
-                frame.setResizable(false);
-                frame.setTitle("BANG! Test");
-            }
-
-            screen = new TerminalScreen(terminal);
-            screen.startScreen();
-            screen.setCursorPosition(null);
-
-            TextGraphics tg = screen.newTextGraphics();
-
             while (true) {
                 KeyStroke key = screen.pollInput();
+
                 if (key != null) {
                     if (key.getKeyType() == KeyType.EOF) break;
 
-                    if (key.getKeyType() == KeyType.Character) {
-                        char c = key.getCharacter();
-                        if (c == ']') {
-                            active = (active + 1) % n;
-                            scenes.get(active).enter();
-                            continue;
-                        }
-                        if (c == '[') {
-                            active = (active - 1 + n) % n;
-                            scenes.get(active).enter();
-                            continue;
-                        }
+                    char ch = (key.getKeyType() == KeyType.Character) ? key.getCharacter() : 0;
+
+                    if (ch == '[' || ch == ']') {
+                        // Save current player's scene (may have transitioned this tick)
+                        scenes[active] = SceneManager.getInstance().getCurrentScene();
+                        active = (ch == '[') ? (active - 1 + n) % n : (active + 1) % n;
+                        SceneManager.getInstance().forceScene(scenes[active]);
+                        updateTitle(frame, active, n);
+                    } else {
+                        SceneManager.getInstance().handleInput(key);
+                        // Capture any scene transition triggered by input
+                        scenes[active] = SceneManager.getInstance().getCurrentScene();
                     }
-                    scenes.get(active).handleInput(key);
                 }
 
                 screen.clear();
-                scenes.get(active).render(tg);
-                drawHud(tg, clients.get(active), active, n);
+                SceneManager.getInstance().render(tg);
+                // Capture auto-transitions that fire during render (e.g. WaitingRoom -> GamePlay)
+                scenes[active] = SceneManager.getInstance().getCurrentScene();
+
+                drawHud(tg, active, n);
                 screen.refresh();
                 Thread.sleep(33);
             }
         } finally {
-            if (screen != null) try { screen.close(); } catch (IOException ignored) {}
-            for (BangClient c : clients) c.disconnect();
+            try { screen.close(); } catch (IOException ignored) {}
             System.exit(0);
         }
     }
 
-    private static void drawHud(TextGraphics tg, BangClient client, int active, int n) {
-        String name = client.getState().myPlayer() != null
-            ? client.getState().myPlayer().name
-            : "P" + (active + 1);
-        String hud = String.format(
-            "  VIEWING: %-10s (%d/%d)   [ = prev player     ] = next player  ",
-            name, active + 1, n);
+    // ─────────────────────────────────────────────────────────────────────────
+
+    private static void updateTitle(javax.swing.JFrame frame, int active, int n) {
+        if (frame == null) return;
+        String role = (active == 0) ? "HOST" : "CLIENT";
+        frame.setTitle(String.format(
+            "BANG! TEST  [%d/%d] %s  |  [ = prev player   ] = next player",
+            active + 1, n, role));
+    }
+
+    private static void drawHud(TextGraphics tg, int active, int n) {
+        String role = (active == 0) ? "HOST" : "CLIENT";
+        String prev = (active > 0)   ? "< P" + active              : "";
+        String cur  = String.format("[ P%d %s  %d/%d ]", active + 1, role, active + 1, n);
+        String next = (active < n-1) ? "P" + (active + 2) + " >"   : "";
+        String line = String.format("  %-16s  %s  %-16s  [ < prev   next > ]",
+            prev, cur, next);
 
         tg.setForegroundColor(TextColor.ANSI.BLACK);
         tg.setBackgroundColor(TextColor.ANSI.YELLOW_BRIGHT);
-        tg.putString(0, SCREEN_ROW - 1, hud);
+        tg.putString(0, SCREEN_ROW - 1, line);
         tg.setForegroundColor(TextColor.ANSI.DEFAULT);
         tg.setBackgroundColor(TextColor.ANSI.DEFAULT);
     }
